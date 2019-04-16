@@ -1,0 +1,49 @@
+boo.start('https://api.skootjobs.com/api/jobs/'+boo.out.url.split("/").pop());
+
+boo.then(function(){
+  boo.waitForSelector('div', 
+	function success(){
+       boo.msg('[Y] Load!!');
+	},
+	function fail(){
+    boo.msg('[W] error load');
+	},2000
+);
+ 
+});
+
+
+boo.then(function(){
+  	//boo.msg('ID: '+boo.out.url.split("/").pop());
+  	//boo.open('https://api.skootjobs.com/api/jobs/'+boo.out.url.split("/").pop());
+  	boo.msg('Data: '+boo.getPageContent());
+  	var json = JSON.parse(this.getPageContent());
+  	var jobdesc = json.description;
+  	var html = document.createElement('div');
+    html.innerHTML = jobdesc;
+		//lets take the html of the current page
+		//var html = this.takeHTML();
+		//html = $("<div>"+html+"<div>").find("img").remove().end().html();
+		//html = $("<div>"+html+"</div>").find("div.alert, div.job-top-actions, div[ng-if='vm.job.informalAddress'], div[ng-if='::vm.job.business.about'], div.block.block-x2").remove().end().html();
+
+		var job = {};
+		
+		/*job-data-start*/
+		   job.html = $(html).html();
+		// job.location = $("", html).find("").text();
+		// job.logo = $("div.job-item-img", html).attr("style");
+		// job.source_apply_email = $("", html).find("").text();
+		// job.source_empname = $("", html).find("").text();
+		  // job.source_jobtype = $("span[ng-repeat='e in vm.job.typeOfEmployment']", html).text();
+		// job.source_salary = $("", html).find("").text();
+
+		//	job.html = boo.removeTextBefore(job.html, "", false);
+		//	job.html = boo.removeTextAfter(job.html, "", true);
+			job.html = boo.cleanHTML(job.html);
+		
+		/*job-data-end*/
+		
+		//Send data... 
+		this.updateJob(job);
+});
+boo.run();

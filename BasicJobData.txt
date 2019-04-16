@@ -1,0 +1,212 @@
+
+boo.start(boo.out.url);
+//boo.start("http://qa.neuvoo.com/service/get_fgc.php?url="+boo.out.url);
+//boo.wait(5000);
+boo.then(function(){
+//boo.page.switchToChildFrame(0);
+	boo.waitForSelector('div', function success() {
+		//lets take the html of the current page
+		var html = this.takeHTML();
+		html = $("<div>"+html+"</div>").find("div.alert, img, iframe, a:contains(www), a:contains(http)").remove().end().html();
+		// html = $("<div>"+html+"</div>").find("div.alert").remove().end().html();
+
+		var job = {};
+		
+		/*job-data-start*/
+		// job.html = $("xxx", html).html();
+		// job.location = $("", html).find("").text();
+		// job.logo = $("", html).find("").attr("src");
+		// job.source_apply_email = $("", html).find("").text();
+		// job.source_empname = $("", html).find("").text();
+		// job.source_jobtype = $("", html).find("").text();
+		// job.source_salary = $("", html).find("").text();
+
+
+/*
+	if(job.html.indexOf("MISSION")>0)job.html = boo.removeTextBefore(job.html, "MISSION", false);
+    		*/      
+     		    		
+		/*
+		  if(job.html.indexOf("MISSION")>0){
+    		      job.html = boo.removeTextBefore(job.html, "MISSION", false);
+     		   } 
+var eliminar = ["The Role", "Summary", "SUMMARY"];
+		for(var i = 0; i< eliminar.length; i++){
+          if(job.html.indexOf(eliminar[i])>0){
+    		      job.html = boo.removeTextBefore(job.html, eliminar[i], false);
+     		   }
+        }
+		*/
+		/*
+      		  if(job.html.indexOf("Contact")>0){
+       			   job.html = boo.removeTextAfter(job.html, "Contact", true);
+       			 }
+		*/
+		/*
+      		  if(job.html.indexOf("Contact")>0){
+       			   job.html = job.html.split("xxx").shift();
+       			 }
+		
+var eliminarD = ["The Role", "Summary", "SUMMARY"];
+            for(var i = 0; i< eliminarD.length; i++){
+              if(job.html.indexOf(eliminarD[i])>0){
+                      job.html = job.html.split(eliminarD[i]).shift();
+                   }
+            }*/
+		 /*
+      		if(job.html.indexOf("Mission")>-1){
+        	  	job.html = "<b>Mission</b>" +job.html.split("Mission")[1];
+       		 }
+       		 */
+
+			job.html = boo.cleanHTML(job.html);
+		//      job.html = $("<div>"+job.html+"</div>").find("h2").remove().end().html();
+		/*job-data-end*/
+		
+			if (typeof job.html == 'undefined'){
+    		   		   job.html = "";
+      			  }
+        		 if(job.html.length<200)
+   				job.html="";
+
+		//Send data... 
+		this.updateJob(job);
+	},function error() {
+	}, 5000);
+});
+boo.run();
+
+//Eliminar Despues
+ var eliminarD = ["The Role", "Summary", "SUMMARY"];
+            for(var i = 0; i< eliminarD.length; i++){
+              if(job.html.indexOf(eliminarD[i])>0){
+                      job.html = job.html.split(eliminarD[i]).shift();
+                   }
+            }
+
+
+//Eliminar Antes
+var eliminar = ["The Role", "Summary", "SUMMARY"];
+		for(var i = 0; i< eliminar.length; i++){
+          if(job.html.indexOf(eliminar[i])>0){
+    		      job.html = boo.removeTextBefore(job.html, eliminar[i], false);
+     		   }
+        }
+
+
+
+  if (job.html.indexOf('@') > -1) {
+              job.html = job.html.replace(/\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,4})+/gi,"");
+            }
+            if (job.html.indexOf('https') > -1) {
+              job.html = job.html.replace(/(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \?=.-]*)*\/?/gi,"");
+            }
+            if (job.html.indexOf('http') > -1) {
+              job.html = job.html.replace(/(http?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \?=.-]*)*\/?/gi,"");
+            }
+            if (job.html.indexOf('HTTPS') > -1) {
+              job.html = job.html.replace(/(HTTPS?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \?=.-]*)*\/?/gi,"");
+            }
+            if (job.html.indexOf('HTTP') > -1) {
+              job.html = job.html.replace(/(HTTP?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \?=.-]*)*\/?/gi,"");
+            }
+
+//job.flag_active = 0;
+//job.html = "Description".bold()+"<br>"+$("div.listing_description", html).html();
+//if(job.html.indexOf("no longer available")<0) this.updateJob(job);
+
+
+
+job.html="<strong>Job description</strong>"+job.html;
+
+para remplazar
+
+  var avoid_destruction = 25;
+        while(job.html.indexOf("</div>") != -1 && avoid_destruction !== 0){
+          avoid_destruction = avoid_destruction -1;
+          job.html = job.html.replace("</div>","<br>");
+        }
+
+
+if( job.html.indexOf("LA FULANA PALABRA") > -1){
+    job.html = job.html.replace("LA FULANA PALABRA","");
+}
+
+
+
+var temp = ["&#193;","&#192;","&#194;","&#195;","&#196;","&#197;",
+   "&#198;","&#199;","&#200;","&#201;","&#202;","&#203;",
+   "&#204;","&#205;","&#206;","&#207;","&#208;","&#209;",
+   "&#210;","&#211;","&#212;","&#213;","&#214;","&#215;",
+   "&#216;","&#217;","&#218;","&#219;","&#220;","&#221;",
+   "&#222;","&#223;","&#224;","&#225;","&#226;","&#227;",
+   "&#228;","&#229;","&#230;","&#231;","&#232;","&#233;",
+   "&#234;","&#235;","&#236;","&#237;","&#238;","&#239;",
+   "&#240;","&#241;","&#242;","&#243;","&#244;","&#245;",
+   "&#246;","&#247;","&#248;","&#249;","&#250;","&#251;",
+   "&#252;","&#253;","&#254;","&#255;","&amp;"];
+var aux = ["À","Á","Â","Ã","Ä","Å","Æ","Ç","È","É","Ê","Ë","Ì","Í",
+   "Î","Ï","Ð","Ñ","Ò","Ó","Ô","Õ","Ö","×","Ø","Ù","Ú","Û",
+   "Ü","Ý","Þ","ß","à","á","â","ã","ä","å","æ","ç","è","é",
+   "ê","ë","ì","í","î","ï","ð","ñ","ò","ó","ô","õ","ö","÷",
+   "ø","ù","ú","û","ü","ý","þ","ÿ","&"];
+
+for(var i=0 ; i<temp.length; i++){
+  if(job.title.indexOf(temp[i])>-1){
+    job.title = job.title.replace(new RegExp(temp[i], 'g'),aux[i]);
+  }
+}
+
+
+job.title = this.out.title;
+
+
+///// Cuando existen jobdatas con distintas ///////////
+      if($("div#offre", html).length){
+              job.html = $("div#offre", html).html();
+            } else if($("div#fa-wrapper", html).length){
+              job.html = $("div#fa-wrapper ", html).html();
+            }
+
+job.html = job.html.replace("Download the full job spec here.","<strong></strong><br>");
+
+if(typeof job.html == 'undefined') 
+    {
+      
+   		job.html="<b>Our Mission</b><br>";
+        job.html=job.html+"	Morgan McKinley is a Global Professional Recruitment consultancy who has continuously grown since 1988 to its current worldwide network of 17 offices across 10 countries. Since launching their Australian business in 2007, Morgan McKinley has become synonymous with exceptional levels of service, an in-depth knowledge of our markets, a determination to be the best and above all a proven track record of success.<br>";
+ 	}
+
+Para eliminar los correo
+if (job.html.indexOf('@') > -1) {   job.html = job.html.replace(/\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,4})+/gi,"");}
+
+while(job.html.indexOf("?") > -1){
+    		job.html = job.html.replace("?","");
+}
+if(job.title.length > 0 && (typeof $(this).attr("href")!="undefined")){
+      page.pagejobs.push(job);
+    }
+    }
+
+
+â€¢
+Â
+while(job.html.indexOf("Â") > -1){
+    job.html = job.html.replace("Â","");
+}
+while(job.html.indexOf("â€¢") > -1){
+    job.html = job.html.replace("â€¢","");
+}
+â€
+while(job.html.indexOf("â€") > -1){
+    job.html = job.html.replace("â€","");
+}
+
+
+
+//-------------------------------construcción  del jobid de successfactors para evitar reindexación--------------------------------------------
+
+var jobid = $(this).find("a.jobTitle").attr("href");
+            jobid = jobid.split("&selected_lang=");
+            jobid = jobid[0].split("&career_job_req_id=");
+job.url = boo.out.url.split("career?")[0]+"career?career_ns=job_listing&career_company="+boo.out.url.split("company=").pop().split("&")[0]+"&career_job_req_id="+jobid[1];

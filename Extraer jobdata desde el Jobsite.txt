@@ -1,0 +1,33 @@
+           
+             
+              //  job.html = $("<div>"+job.html+"</div>").find("").remove().end().html();
+              //  job.html = $("<div>"+job.html+"</div>").find("li.welcomekit-job-department").remove().end().html();
+              //  job.html = $("<div>"+job.html+"</div>").find("li.welcomekit-job-officeCity").remove().end().html();
+              //  job.html = $("<div>"+job.html+"</div>").find("li.welcomekit-job-officeCountry").remove().end().html();
+              //  job.html = $("<div>"+job.html+"</div>").find("li.welcomekit-job-contractType").remove().end().html();
+              //  job.html = $("<div>"+job.html+"</div>").find("li.welcomekit-job-contractType").remove().end().html();
+      	      //  job.html = boo.removeTextBefore(job.html, "Full-Time",true);
+     	      //  job.html = boo.removeTextBefore(job.html, "Le design occupe une place capitale chez Glose", false);
+	      //  job.html = boo.removeTextAfter(job.html, "", true);
+	      //  job.html = boo.removeTextAfter(job.html, "", true);
+   	      //  job.html = job.html.split("xxx").shift();
+ 	      //  job.html = job.html.split("xxx").shift();
+
+	      //  job.html = $(this, html).html();
+      	      //  job.html = boo.cleanHTML(job.html);
+              //  job.jobdesc = $("<div>"+job.html+"</div>").text();
+
+
+			job.temp = 1;
+		
+		page.pagejobs.push(job);
+		
+	});/*loop-end*/
+	/*extract-end*/
+
+
+https://cornerstone.csod.com/ux/ats/careersite/2/home/requisition/3134?c=cornerstone
+https://cornerstone.csod.com/ats/careersite/JobDetails.aspx?id=3134
+
+
+

@@ -1,0 +1,127 @@
+boo.start();
+
+//Funcion para abrir el jobsiteurl
+boo.then(function() {
+	boo.open(boo.out.url);
+	boo.pushThen(['wait-for-page-load']);
+}, "go-to-page");
+var numJobs = 0;
+var hitsPerPage = 0;
+//funcion para esperar por la informacion de la pagina
+boo.saveThen(function() {
+  	//hitsPerPage = hitsPerPage + 20;
+    boo.pushThen(['extract']);
+},"wait-for-page-load");
+
+//Funcion para extraer los jobs
+boo.saveThen(function() {
+	html = this.takeHTML();
+
+	//Echo # of page and add +1 to current page counter
+	boo.msg("Starting page: "+(++boo.out.numpage));
+		
+	//create page object -- pagejobs => array , have_next_page => false , nextpage => currentpage +1
+	page = {pagejobs:[], have_next_page: false, nextpage: boo.out.numpage + 1};
+
+	/*extract-start*/
+  var json1 = this.getPageContent().replace("jQuery19109780403446054609_1534526924041(","").replace("})","}");
+  boo.msg('hola : '+json1);
+	var json = JSON.parse(json1);
+  	
+  	var jobs = json.jobs;
+   boo.msg('[Y] jobs'+jobs.length);
+    for(i in jobs) {
+      var job = {};/*init*/
+      
+      job.title = jobs[i].title;
+      job.location = jobs[i].city+", "+jobs[i].country;
+      job.url = jobs[i].contact;
+     
+      job.temp = 59898;
+     // page.pagejobs.push(job);
+         
+      //Inicio Validacion de Fecha
+/**/
+	var fecha = jobs[i].date_posted;
+
+        var day = fecha.split(/[-./]| /g)[0].trim();
+        var month = fecha.split(/[-./]| /g)[1].trim();
+        var year = fecha.split(/[-./]| /g)[2].trim();
+
+        var meses = ["01","02","03","04","05","06","07",
+				     "08","09","10","11","12"];
+        meses.forEach(function(mes,i) {
+            if((new RegExp(month,'i')).test(mes)){
+                month = i+1;
+            }
+        });
+        var date = month+"/"+day+"/"+year;
+
+        var job_date = new Date(date);
+        var actual_date = new Date();
+        var result_date = actual_date.getTime() - job_date.getTime() ;
+        var miliseconds_in_six_months = (1000 * 60 * 60 * 24* 365)/ 2;
+        result_date = result_date/miliseconds_in_six_months;
+        if (result_date < 1){
+            page.pagejobs.push(job);
+         // boo.msg("[I] Job no vencido  "+job_date);
+        }
+        else{
+          boo.msg("[W] Job vencido  "+job_date);
+        }
+
+//Fin Validacion de Fecha
+      
+      
+      
+    }	
+	/*extract-end*/
+    
+    //Echo # of jobs found
+    boo.msg("Jobs found: "+page.pagejobs.length);
+	//Send jobs to Ghost Process
+	boo.send_jobs(page.pagejobs);	
+  
+	//boo.pushThen(['have-next-page']);
+}, "extract");
+
+boo.saveThen(function() {
+	var have_next_page = false;
+	boo.msg('[Y]-page.pagejobs.length ' + page.pagejobs.length);
+  
+  	/*if(page.pagejobs.length>0){
+    	have_next_page = true;  
+    }*/
+  	
+	/* Si existe el elemento
+	if($("", html).length > 0){
+    	have_next_page = true;    
+    } 
+    */
+  
+	/* PaginaciC³n por nCrmeros
+    $("", html).each(function(){
+        if($(this).text().trim() == page.nextpage){
+            have_next_page = true;
+        }
+    });
+	*/
+
+	if(have_next_page) boo.pushThen(['go-to-next-page']);
+}, "have-next-page"); 
+
+boo.saveThen(function() {
+  /*	boo.msg('[W] Entre...');
+  	boo.pushThen(['wait-for-page-load']);
+	Haciendo click en un elemento
+	boo.clickSelector('');
+	boo.pushThen(['wait-for-page-load']);
+	*/
+
+	/* Abriendo un link en la pC?gina
+	boo.multilink_set({urls:[""]});
+	boo.multilink_open('wait-for-page-load');
+	*/
+}, "go-to-next-page");
+
+boo.run();

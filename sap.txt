@@ -1,0 +1,7 @@
+1) http://boo.neuvoo.com/ghost/spider.php?id=135088
+2) http://boo.neuvoo.com/ghost/spider.php?id=135460
+3) http://boo.neuvoo.com/ghost/spider.php?id=100354
+en los primeros dos el jobsite cambio
+pero alli esta el codigo
+el tercero si esta live
+en los ultimos dos la clave esta en conseguir el xml o el json desde el network de la pagina

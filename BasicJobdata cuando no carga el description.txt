@@ -1,0 +1,49 @@
+boo.start(boo.out.url);
+boo.then(function(){
+  boo.waitForSelector('div#main', 
+	function success(){
+      boo.msg('[Y] cargo');
+	},
+	function fail(){
+    boo.msg('[W] no cargo');
+	},7000
+);
+});
+
+
+boo.then(function(){
+	//boo.waitUntilVisible('div#main', function success() {
+		//lets take the html of the current page
+      
+		var html = this.getHTML();
+		//html = $("<div>"+html+"</div>").find("em").remove().end().html();
+		html = $("<div>"+html+"<div>").find("img, div.alert, a, input, button").remove().end().html();
+		var job = {};
+		
+		/*job-data-start*/
+         // job.html = boo.getPageContent();
+		  job.html = $("div#main", html).html();
+		// job.location = $("", html).find("").text();
+		// job.logo = $("", html).find("").attr("src");
+		// job.source_apply_email = $("", html).find("").text();
+		// job.source_empname = $("", html).find("").text();
+		// job.source_jobtype = $("", html).find("").text();
+		// job.source_salary = $("", html).find("").text();
+      
+		//job.html = job.html.replace("Location:", "");
+      
+		 job.html = boo.removeTextBefore(job.html, "Le poste", false);
+		//job.html = boo.removeTextAfter(job.html, "", true);
+		/* if(job.html.indexOf("Apply Today!") >-1){
+			job.html = boo.removeTextAfter(job.html, "Apply Today!", true); 
+		}*/
+		job.html = boo.cleanHTML(job.html);		 
+		/*job-data-end*/
+		
+		//Send data... 
+		this.updateJob(job);
+	//},function error() {
+     // boo.msg('[W] error');
+	//}, 15000);
+});
+boo.run();

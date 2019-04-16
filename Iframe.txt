@@ -1,0 +1,59 @@
+________________________________________________________________
+
+iFRAME
+
+Se debe colocar boo.page.switchToChildFrame(0) antes de la linea waitForSelector en el bloque wait-for-page
+y tambien en el bloque del go-to-next-page antes de la linea clickselesctor o waitForSelecor. Esto en el Jobsite.
+En el jobdata tambien se debe hacer lo mismo.
+________________________________________________________________
+
+boo.start();
+
+//Funcion para abrir el jobsiteurl
+boo.then(function() {
+	boo.open(boo.out.url);
+	boo.pushThen(['wait-for-page-load']);
+}, "go-to-page");
+
+//funcion para esperar por la informacion de la pagina
+boo.saveThen(function() {
+  boo.page.switchToChildFrame(0);
+  boo.waitForSelector('div.cc', function() {
+    boo.msg("[I]Starting extract"); 
+    }, function(){ // step to execute if check has failed
+      boo.msg("[W]text never changed...");  
+    },10000);
+  
+    boo.pushThen(['extract']);
+},"wait-for-page-load");
+
+
+
+
+
+
+-----------------------------------------------------------------------------------------------
+Si la pagina tiene numeracion por numero
+
+boo.saveThen(function() {
+	/*Haciendo click en un elemento*/
+	boo.page.switchToChildFrame(0);
+	boo.clickSelector('div.rdpWrap.rdpNumPart a:contains('+page.nextpage+')');
+  	boo.waitForSelectorTextChange('li.search-j-info', 
+	function success(){
+      boo.msg('[I]Next Page');
+      boo.pushThen(['extract']);
+	},
+	function fail(){
+      boo.msg('[W]text never changed... executing again');
+	},250000
+	);
+	
+
+	//boo.pushThen(['wait-for-page-load']);
+	
+	/* Abriendo un link en la pagina
+	boo.multilink_set({urls:[""]});
+	boo.multilink_open('wait-for-page-load');
+	*/
+}, "go-to-next-page");

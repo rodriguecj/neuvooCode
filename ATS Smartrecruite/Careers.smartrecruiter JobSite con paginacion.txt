@@ -1,0 +1,67 @@
+boo.start();
+
+//Funcion para abrir el jobsiteurl
+boo.then(function() {
+  boo.open(boo.out.url);
+  boo.pushThen(['wait-for-page-load']);
+}, "go-to-page");
+
+//funcion para esperar por la informacion de la pagina
+boo.saveThen(function() {
+  boo.waitForSelector('li.opening-job', 
+                      function success(){
+    boo.pushThen(['extract']);
+    boo.msg('[I]Cargo el selector!');
+  },
+                      function fail(){
+    boo.msg('[W]NO Cargo el selector!');
+  },3000
+                     );
+
+},"wait-for-page-load");
+
+//Funcion para extraer los jobs
+boo.saveThen(function() {
+  html = this.takeHTML();
+
+  //Echo # of page and add +1 to current page counter
+  boo.msg("Starting page: "+(++boo.out.numpage));
+
+  //create page object -- pagejobs => array , have_next_page => false , nextpage => currentpage +1
+  page = {pagejobs:[], have_next_page: false, nextpage: boo.out.numpage + 1};
+
+  /*extract-start*/
+  //var remap = {};
+  $('li.opening-job',html).each(function( index ) {/*loop-start*/
+    var job = {};/*init*/
+
+    job.title = $(this).find("h3.details-title").text().split(" - ")[0].split(", ")[0];
+    //job.location = $(this).parent().prev().find("li:first").text();
+    job.url = $(this).find("a.link--block").attr("href");
+    job.source_jobtype = $(this).find("p.details-desc").text();
+
+    job.temp = 25;
+
+    if (job.title !== "")
+      page.pagejobs.push(job);
+
+  });/*loop-end*/
+  /*extract-end*/
+
+  //Echo # of jobs found
+  boo.msg("Jobs found: "+page.pagejobs.length);
+  //Send jobs to Ghost Process
+  boo.send_jobs(page.pagejobs);	
+  
+// Se envia directamente al saveThen de abrir un nuevo URL, porque la pagina 1 no tiene boton para paginar//
+  boo.pushThen(['go-to-next-page']);
+}, "extract");
+
+boo.saveThen(function() {
+  /* Abriendo un link en la página*/
+  boo.multilink_set({urls:["https://careers.smartrecruiters.com/more/OliverBonacini?type=location&value=Toronto&page="+page.nextpage+""]});
+  boo.multilink_open('wait-for-page-load');
+
+}, "go-to-next-page");
+
+boo.run();

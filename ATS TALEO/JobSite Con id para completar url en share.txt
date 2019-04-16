@@ -1,0 +1,116 @@
+var cont = 1;
+boo.start();
+
+/*---------------------------------------------------------------------------------------------*/
+
+//Funcion para abrir el jobsiteurl
+boo.then(function() {
+	this.open(boo.out.url);
+	this.pushThen(['wait-for-page-load']);
+}, "go-to-page");
+
+/*---------------------------------------------------------------------------------------------*/
+
+//funcion para esperar por la informacion de la pagina
+boo.saveThen(function()
+{
+     boo.waitForSelector("div.editablesection", 
+	function success()
+    {
+    boo.msg("[Y]Selector loaded");
+    boo.pushThen(['extract']);       
+	},
+	function fail()
+    {
+    boo.msg("[Y]Selector failed");
+	},3000);
+	
+},"wait-for-page-load");
+
+/*---------------------------------------------------------------------------------------------*/
+
+//Funcion para extraer los jobs
+boo.saveThen(function() {
+  
+	html = this.takeHTML();
+  
+	//Echo # of page and add +1 to current page counter
+	this.msg("Starting page: "+(++this.out.numpage));
+		
+	//create page object -- pagejobs => array , have_next_page => false , nextpage => currentpage +1
+	page = {pagejobs:[], have_next_page: false, nextpage: this.out.numpage + 1};
+
+	/*extract-start*/
+	$("div.editablesection",html).each(function( index ) {/*loop-start*/
+      
+		var job = {};/*init*/
+		
+		job.title = $(this).find("span.titlelink").text().split("-")[0];
+      
+		job.location = $(this).find('div:eq(4)').text().split("-MCL")[0];
+        job.location = job.location.split('-').reverse().join().replace(/,/gi,', ').trim();
+        job.location = job.location + ", US";
+      if(job.location.indexOf("More")>-1)
+        job.location = job.location.split("More...,")[1];
+     
+      job.location = job.location.replace("Danville, Columbia,", "");
+	    var temp_id = $(this).find("div.contentlinepanel span:nth-of-type(10)").text();
+	job.url = "https://woodforest.taleo.net/careersection/jobdetail.ftl?job="+temp_id+"&lang=en";	
+    job.source_jobtype = $(this).find("span.jobtype").text();
+		
+		job.temp = "130722018";
+      
+        if( job.title.length > 0 && job.location.length >0)
+		page.pagejobs.push(job);
+		
+	});/*loop-end*/
+	/*extract-end*/
+    
+    //Echo # of jobs found
+    this.msg("Jobs found: "+page.pagejobs.length);
+	//Send jobs to Ghost Process
+	this.send_jobs(page.pagejobs);	
+  
+this.pushThen(['have-next-page']);
+  
+}, "extract");
+
+/*---------------------------------------------------------------------------------------------*/
+boo.saveThen(function() {
+	var have_next_page = false;
+	
+    var numPag = $("span.pagerlabel", html).text();
+        numPag = numPag.substring(numPag.lastIndexOf("of")+2).trim();      
+
+	boo.msg("[I]Total Pages: "+numPag);
+
+    if(boo.out.numpage < numPag){
+      have_next_page = true;
+      boo.msg("[I]"+page.have_next_page);
+    }
+  
+  	if(have_next_page) boo.pushThen(['go-to-next-page']);
+	
+}, "have-next-page"); 
+
+/*---------------------------------------------------------------------------------------------*/
+
+boo.saveThen(function() {
+  
+	/*Haciendo click en un elemento*/
+	boo.clickLabel("Next", "a");
+  	boo.waitForSelectorTextChange('div.iconcontentpanel', 
+	function success(){
+      boo.pushThen(['extract']);
+	},
+	function fail(){
+      boo.msg('[W]Pagination Error!');
+	},3000
+);
+	
+	
+}, "go-to-next-page");
+
+/*---------------------------------------------------------------------------------------------*/
+
+boo.run();

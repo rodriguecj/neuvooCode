@@ -1,0 +1,136 @@
+boo.start();
+var number_job_now = 0;
+
+//---------------------------Función para abrir el jobsiteurl------------------------------------------------------------------
+
+boo.then(function() {
+  boo.open(boo.out.url);
+  boo.pushThen(['wait-for-page-load']);
+}, "go-to-page");
+
+//--------------------------Función para esperar por la informacion de la página---------------------------------------------------------
+
+boo.saveThen(function() {
+  boo.waitForSelector('table.table tr.even', 
+	function success(){
+      boo.pushThen(['extract']);
+	},
+	function fail(){
+      boo.msg('[W]Error loading page!');
+	},8000);
+},"wait-for-page-load");
+
+//---------------------------------------------------------------------------------------------
+
+//Funcion para extraer los jobs
+  boo.saveThen(function() {
+  html = this.takeHTML();
+  boo.msg("Starting page: "+(++boo.out.numpage));
+  page = {pagejobs:[], have_next_page: false, nextpage: boo.out.numpage + 1};
+
+//------------------------------------Extract-Start-------------------------------------------------
+    
+  /*extract-start*/
+  $("table#jobs tbody tr",html).each(function( index ) {/*loop-start*/
+    var job = {};/*init*/
+    
+	job.title = $(this).find("a:eq(0)").text();
+    
+    job.location = $(this).find("td:eq(1)").text();
+    job.location = job.location.split('-').reverse().join().replace(/,/gi,', ').trim().replace("USA","US");
+    job.location = job.location.replace("Multiple Locations", "").replace("Home City,", "");
+    if(job.location===""){
+      job.location = "New Jersey, US";
+    }
+    if(job.location.indexOf("MEX")>-1){
+      job.location = "DF, MX";
+    }
+    job.url ="https://jacobs.taleo.net"+ $(this).find("a:eq(0)").attr("href");
+    
+    job.temp = 981670;
+    
+    var get_date = $(this).find("td:eq(2)").text().trim().replace(",","").replace("Jan","01")
+          .replace("Feb","02")
+          .replace("Mar","03")
+          .replace("Apr","04")
+          .replace("May","05")
+          .replace("Jun","06")
+          .replace("Jul","07")
+          .replace("Aug","08")
+          .replace("Sep","09")
+          .replace("Oct","10")
+          .replace("Nov","11")
+          .replace("Dec","12").trim().replace(/ /gi,"/").replace("/","*");
+        var dia = get_date.split("*")[1].split("/")[0];
+        var mes = get_date.split("*")[0];
+        var annio = get_date.split("/")[1];
+        get_date = dia.trim()+"/"+mes.trim()+"/"+annio.trim(); 
+      	  
+    //boo.msg("[Y] get_date: "+get_date);
+    get_date = get_date.split("/")[1] + '/' + get_date.split('/')[0] + '/' +get_date.split('/')[2];
+    var minutes = 1000 *60;
+    var hours = minutes * 60;
+    var days = hours * 24;
+    var years = days * 365;
+    var delay = years/2;
+    var job_date =(new Date().getTime() - (Date.parse(get_date)+delay))/years;
+    
+    if (job_date <= 0){
+    
+          if(job.title.length > 0 && job.location.length > 0){
+            page.pagejobs.push(job);
+          }
+    }
+   
+    
+  });/*loop-end*/
+  /*extract-end*/
+
+if (page.pagejobs.length > 0 ){
+
+    //Echo # of jobs found
+    boo.msg("Jobs found: "+page.pagejobs.length);
+    boo.send_jobs(page.pagejobs); 
+    var number_job_update = page.pagejobs.length;
+    var number_job_update_int = parseInt(number_job_update,10);
+    number_job_now = number_job_now +number_job_update_int;
+    boo.msg("[Y]Number jobs now: "+ number_job_now);
+    boo.pushThen(['have-next-page']);
+}
+}, "extract");
+/*--------------------------- ----Check-nextpage-start--------------------------------------------------------------------*/
+
+boo.saveThen(function() {
+
+  var next = $("a#next", html);
+
+  if(next.hasClass("navigation-link-disabled")) {      
+    boo.msg("[W]No more pages!");  
+  } else {
+    this.pushThen(['go-to-next-page']);
+    boo.msg("[Y]Next page => "+page.nextpage);  
+  }
+
+}, "have-next-page"); 
+
+/*----------------------------------Goto-nextpage-start-----------------------------------------------------------*/
+
+boo.saveThen(function() {
+  
+  /*Haciendo click en un elemento*/
+  boo.clickSelector('a#next');
+  boo.waitForSelectorTextChange('table.table', 
+	function success(){
+      boo.pushThen(['extract']);
+      boo.msg('[Y]Calling extract - Again!');
+	},
+	function fail(){
+      boo.msg('[W]Error in pagination!');
+	},10000);  
+  
+}, "go-to-next-page");
+
+
+/*------------------------------------Goto-nextpage-end-------------------------------------------------*/
+
+boo.run();

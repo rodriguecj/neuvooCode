@@ -1,0 +1,54 @@
+
+
+boo.start("https://workforcenow.adp.com/mascsr/default/careercenter/public/events/staffing/v1/job-requisitions/"
++boo.out.url.split("jobId=")[1].split("&lang")[0]
++"?cid=1e91abd5-1792-441f-a40a-9a4e07f3f772&timeStamp=1533589536392&lang=en_US&ccId=19000101_000001&locale=en_US");
+
+boo.then(function(){
+  boo.waitForSelector('div', 
+	function success(){
+      boo.msg('[Y] cargo');
+	},
+	function fail(){
+      boo.msg('[W] no cargo');
+	},3000
+);
+});
+boo.then(function(){
+  	boo.msg('[I]ID: '+boo.out.url.split("jobId=")[1].split("&lang")[0]);
+  	//boo.open('https://api.skootjobs.com/api/jobs/'+boo.out.url.split("/").pop());
+  //	boo.msg('Data: '+boo.getPageContent());
+  	var json = JSON.parse(this.getPageContent());
+  	var jobdesc = json.requisitionDescription;
+  	var html = document.createElement('div');
+    html.innerHTML = jobdesc;
+		//lets take the html of the current page
+		//var html = this.takeHTML();
+		//html = $("<div>"+html+"<div>").find("img").remove().end().html();
+		//html = $("<div>"+html+"</div>").find("div.alert, div.job-top-actions, div[ng-if='vm.job.informalAddress'], div[ng-if='::vm.job.business.about'], div.block.block-x2").remove().end().html();
+
+		var job = {};
+		
+		/*job-data-start*/
+		   job.html = $(html).html();
+		// job.location = $("", html).find("").text();
+		// job.logo = $("div.job-item-img", html).attr("style");
+		// job.source_apply_email = $("", html).find("").text();
+		// job.source_empname = $("", html).find("").text();
+		  // job.source_jobtype = $("span[ng-repeat='e in vm.job.typeOfEmployment']", html).text();
+		// job.source_salary = $("", html).find("").text();
+
+		//	job.html = boo.removeTextBefore(job.html, "", false);
+		//	job.html = boo.removeTextAfter(job.html, "", true);
+			job.html = boo.cleanHTML(job.html);
+		
+		/*job-data-end*/
+		if (typeof job.html == 'undefined'){
+    		   		   job.html = "";
+      			  }
+        		 if(job.html.length<200)
+   				job.html="";
+		//Send data... 
+		this.updateJob(job);
+});
+boo.run();

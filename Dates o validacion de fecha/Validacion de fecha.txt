@@ -1,0 +1,118 @@
+.boo.start();
+var number_job_now = 0;
+
+//---------------------------Función para abrir el jobsiteurl------------------------------------------------------------------
+
+boo.then(function() {
+  boo.open(boo.out.url);
+  boo.pushThen(['wait-for-page-load']);
+}, "go-to-page");
+
+//--------------------------Función para esperar por la informacion de la página---------------------------------------------------------
+
+boo.saveThen(function() {
+  boo.waitForSelector('body', function success( ){
+    boo.msg('[I]Pagina cargada');
+    boo.pushThen(['extract']);
+  },function fail(){
+    boo.msg('[W]La pagina no cargó');
+  },3000);
+},"wait-for-page-load");
+
+//---------------------------------------------------------------------------------------------
+//Funcion para extraer los jobs
+  boo.saveThen(function() {
+  html = this.takeHTML();
+  boo.msg("Starting page: "+(++boo.out.numpage));
+  page = {pagejobs:[], have_next_page: false, nextpage: boo.out.numpage + 1};
+
+//------------------------------------Extract-Start-------------------------------------------------
+  /*extract-start*/
+  $("ul.jobs-list li.jobs-item",html).each(function( index ) {/*loop-start*/
+    var job = {};/*init*/
+    // boo.msg('entra');
+    //.slice(9)
+     job.title = $(this).find("h3.job-title").text().replace(/\(.*?\)/g, '').replace('- COLUMBUS', '');
+     job.location = $(this).find("p.job-location").text().replace(/\d+/, "").replace(/(\n|\s\s+)/g,"");
+     job.url = $(this).find("a").attr("href");
+     job.temp = 03132018;
+    
+    
+    var date = $(this).find("li:nth-of-type(2)").text();  
+
+     if (date.indexOf("today")>-1){
+        date = "vigente";
+      }
+    if (date.indexOf("day")>-1){
+        date = "vigente";
+      }
+    if (date.indexOf("week")>-1){
+        date = "vigente";
+      }
+    if (date.indexOf("month")>-1){
+        date = date.split("month")[0];
+        if(date>6)
+          date = "";
+        else
+          date = "vigente";
+      }
+    if (date.indexOf("year")>-1){
+        date = "";
+      }
+    
+
+    if(job.title.length > 0 && job.location.length > 0 && date.length > 0){
+      page.pagejobs.push(job);
+    }
+    
+  });/*loop-end*/
+  /*extract-end*/
+
+
+//-------------------------------------Extract-End-------------------------------------------------------    
+    //Echo # of jobs found
+    boo.msg("Jobs found: "+page.pagejobs.length);
+    boo.send_jobs(page.pagejobs); 
+    var number_job_update = page.pagejobs.length;
+    var number_job_update_int = parseInt(number_job_update,10);
+    number_job_now = number_job_now +number_job_update_int;
+    boo.msg("[Y]Number jobs now: "+ number_job_now);
+    //if(page.pagejobs.length>0)
+    boo.pushThen(['have-next-page']);
+}, "extract");
+
+//--------------------------- ----Check-nextpage-start--------------------------------------------------------------------*/
+
+boo.saveThen(function() {
+  if($("X", html).length > 0){
+      boo.msg('[I]CHECK OK');  
+      boo.pushThen(['go-to-next-page']);
+   } 
+}, "have-next-page"); 
+
+/*----------------------------------Goto-nextpage-start-----------------------------------------------------------*/
+
+boo.saveThen(function() {
+    var sel = 'X';
+    boo.click(xPath(sel));
+    boo.click("X");
+    boo.msg('Da click');
+    boo.waitForSelectorTextChange('', function success(){
+    boo.pushThen(['extract']);
+  },function fail(){
+    boo.msg('[W]Pagination Error!');
+  },8000);  
+    }, "go-to-next-page");
+
+/*
+boo.saveThen(function() {
+    var nexturl = "https:/"+page.nextpage;
+    this.thenOpen(nexturl, function() {
+      boo.pushThen(['wait-for-page-load']);
+    }); 
+  
+}, "go-to-next-page");
+*/
+/*------------------------------------Goto-nextpage-end-------------------------------------------------*/
+
+boo.run();

@@ -1,0 +1,143 @@
+boo.start();
+
+/*---------------------------------------------------------------------------------------------*/
+
+//Funcion para abrir el jobsiteurl
+boo.then(function() {
+	this.open(boo.out.url);
+	this.pushThen(['wait-for-page-load']);
+}, "go-to-page");
+
+/*---------------------------------------------------------------------------------------------*/
+
+//funcion para esperar por la informacion de la pagina
+boo.saveThen(function() {
+	boo.waitForSelector('tbody.searchResultsJobs', 
+	function success(){
+      boo.pushThen(['extract']);
+	},
+	function fail(){
+      boo.noti('Error loading..', 'error');
+	},10000
+);	
+},"wait-for-page-load");
+
+/*---------------------------------------------------------------------------------------------*/
+
+//Funcion para extraer los jobs
+boo.saveThen(function() {
+  
+	html = this.takeHTML();
+    var temp = true;
+	//Echo # of page and add +1 to current page counter
+	this.msg("Starting page: "+(++this.out.numpage));
+		
+	//create page object -- pagejobs => array , have_next_page => false , nextpage => currentpage +1
+	page = {pagejobs:[], have_next_page: false, nextpage: this.out.numpage + 1};
+
+	/*extract-start*/
+	$("tr.evenrow, tr.oddrow",html).each(function( index ) {/*loop-start*/
+      
+		var job = {};/*init*/
+		/********************* Obteniendo la fecha del job  ****************************/
+      
+        var get_date = $(this).find("td:nth-of-type(5)").text().trim();
+       // boo.msg('[Y] get_date->'+get_date);
+        var day = get_date.split('.')[0];
+       // boo.msg('[Y] day ' + day);
+        var month = get_date.split('.')[1];
+        //boo.msg('[Y] month ' + month);
+        var year = get_date.split('.')[2];
+       // boo.msg('[Y] year ' + year);
+        var actual_date = new Date();
+        var fechaJob = "";
+        fechaJob = new Date(year, month-1, day);
+       //boo.msg('[I]fechaJob: ' + fechaJob);
+        actual_date.setDate(actual_date.getDate()-parseInt(180));
+       // boo.msg('[W] fecha:'+fechaJob.toLocaleDateString());
+       // boo.msg('[W] actual_date:'+actual_date);
+      
+      /********************************************************************************/
+		job.title = $(this).find("a:nth-of-type(2)").text();
+		job.location = $(this).find("td:nth-of-type(4)").text().trim()+", Malaysia";
+		job.location = job.location.replace("SGR", "Selangor").replace("JHR", "Johor").replace("PJY", "Puchong").replace("KUL", "Kuala Lumpur").trim();
+		//job.location = job.location.replace("KUL", "Kuala Lumpur").trim();
+      	//job.location = job.location.replace("PJY", "Puchong").trim();   
+      	//job.location = job.location.replace("JHR", "Johor").trim();   
+		//job.location = job.location.replace("", "").trim();    
+      	job.location = job.location.toUpperCase();
+		job.url = $(this).find("a:contains(View job details)").attr("href").split("?").shift();
+		//job.logo = $(this).find("").attr("src");
+		//job.source_apply_email = $(this).find("").text();
+		//job.source_empname = $(this).find("").text();
+		//job.source_jobtype = $(this).find("").text();
+		//job.source_salary = $(this).find("").text();
+		job.temp = "temporal_24102016_2";
+       if(fechaJob > actual_date){
+        if(job.title.length > 0 && job.location.length > 0){
+          page.pagejobs.push(job);
+        } 
+       }else{
+           boo.msg('[I] Expiry Job->'); 
+          
+        }
+	});/*loop-end*/
+	/*extract-end*/
+    
+    //Echo # of jobs found
+    this.msg("Jobs found: "+page.pagejobs.length);
+	//Send jobs to Ghost Process
+	this.send_jobs(page.pagejobs);	
+  
+  if(temp){
+		boo.pushThen(['have-next-page']);
+   }
+  
+}, "extract");
+
+/*---------------------------------------------------------------------------------------------*/
+
+boo.saveThen(function() {
+  
+	var have_next_page = false;
+	
+	if($("span.navigationItems a:contains("+page.nextpage+")", html).length > 0){
+      have_next_page = true;    
+      boo.msg("[I]Next page: "+page.nextpage);
+    } 
+    
+	if(have_next_page) boo.pushThen(['go-to-next-page']);
+	
+}, "have-next-page"); 
+
+/*---------------------------------------------------------------------------------------------*/
+
+boo.saveThen(function() {
+  
+  /* Abriendo un link en la pÃ¡gina
+ var nextUrl = "http://www.you.my/search-results-jobs/?action=search&page="+page.nextpage+"&listings_per_page=100&view=list";
+ boo.multilink_set({urls:[nextUrl]});
+ boo.multilink_open('extract');
+ boo.msg(nextUrl, "notification-success");
+ boo.msg("[I]"+nextUrl);*/
+  
+	/*Haciendo click en un elemento*/
+	boo.clickLabel(page.nextpage, 'a');
+	boo.waitForSelectorTextChange('tbody.searchResultsJobs', 
+	function success(){
+      boo.pushThen(['extract']);
+	},
+	function fail(){
+      boo.msg('[W] text never changed...');
+	},10000
+);
+}, "go-to-next-page");
+
+/*---------------------------------------------------------------------------------------------*/
+
+boo.run();
+
+
+
+
+

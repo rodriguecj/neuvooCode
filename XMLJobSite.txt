@@ -1,0 +1,124 @@
+boo.start();
+
+var selectorJobs = "ad";
+var selectorPaginacion = "";
+
+
+//Funcion para abrir el jobsiteurl
+boo.then(function() {
+	boo.open(boo.out.url);
+	boo.pushThen(['wait-for-page-load']);
+}, "go-to-page");
+
+//funcion para esperar por la informacion de la pagina
+boo.saveThen(function() {
+	boo.waitForSelector("job", 
+	function success(){
+      boo.msg('[Y] Cargo el extract');
+      boo.pushThen(['extract']);
+	},
+	function fail(){
+      boo.msg('[W] NO cargo el extract');
+	},15000
+);
+	// boo.pushThen(['extract']);
+},"wait-for-page-load");
+
+//Funcion para extraer los jobs
+boo.saveThen(function() {
+	//html = this.takeHTML();
+
+	//Echo # of page and add +1 to current page counter
+	boo.msg("Starting page: "+(++boo.out.numpage));
+		
+	//create page object -- pagejobs => array , have_next_page => false , nextpage => currentpage +1
+	page = {pagejobs:[], have_next_page: false, nextpage: boo.out.numpage + 1};
+
+	var html = this.getHTML();
+	//var html = "<xml>"+this.getHTML()+"</xml>";
+	html = $.parseXML( html );
+	/*extract-start*/
+	//var remap = {};
+  	
+  	
+	$("job",html).each(function( index ) {/*loop-start*/
+		var job = {};/*init*/
+      
+      
+		//Quitando Referencias de los jobs, Asig. QA
+		job.title = $(this).find("titre").text();
+      	job.location = "France";
+		job.url = "http://www.pharmatis.fr"+$(this).find("desc").text().trim().replace("..","");
+		job.temp = 1;
+		page.pagejobs.push(job);
+		
+	});/*loop-end*/
+	/*extract-end*/
+    
+    //Echo # of jobs found
+    boo.msg("Jobs found: "+page.pagejobs.length);
+	//Send jobs to Ghost Process
+	if(page.pagejobs.length > 0)
+	boo.send_jobs(page.pagejobs);	
+	else
+		boo.msg("[W] Array Vacio");
+  
+	//	boo.pushThen(['have-next-page']);
+}, "extract");
+
+
+boo.saveThen(function() {
+  var have_next_page = false;
+  /* Si existe el elemento
+	//if($(selectorPaginacion, html).length > 0){
+    //if($("a:contains("+page.nextpage+")", html).length > 0){
+    //if($("a:contains(Next)", html).length > 0){
+    	boo.msg('[Y] Hay proxima pagina');
+    	have_next_page = true;    
+    } 
+    */
+if(have_next_page) boo.pushThen(['go-to-next-page']);
+
+ /* Paginación por números     
+    $("ul.pagination.no-margin a", html).each(function()
+    {
+        if($(this).text().trim() == page.nextpage)
+       {
+          boo.msg("[I] Hay otra pagina");
+
+      if(!have_next_page)
+      {
+         boo.pushThen(['go-to-next-page']);
+            have_next_page = true;
+         }
+  };
+ });   
+ */ 
+}, "have-next-page");
+ 
+
+boo.saveThen(function() {
+	/*Haciendo click en un elemento
+	//boo.clickSelector(selectorPaginacion);
+	//boo.clickSelector("a:contains("+page.nextpage+")");
+	//boo.clickSelector("a:contains(Next)");
+	boo.waitForSelectorTextChange(selectorJobs, 
+	function success(){
+      boo.msg('[Y] Pagine');
+      boo.pushThen(['extract']);
+	},
+	function fail(){
+      boo.msg('[W] NO pagine');
+	},15000
+);
+	*/
+
+	/* Abriendo un link en la página
+    var nextpage = (boo.out.numpage+1)*10;
+    var nexturl = "http://bhrs.co.za/index.php?option=com_jobboard&view=list&catid=1&layout=list&limitstart="+nextpage;
+	boo.multilink_set({urls:[nexturl]});
+	boo.multilink_open('wait-for-page-load');
+	*/
+}, "go-to-next-page");
+
+boo.run();

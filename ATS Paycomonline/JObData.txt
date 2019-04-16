@@ -1,0 +1,73 @@
+boo.start(boo.out.url);
+
+boo.then(function(){
+//boo.page.switchToChildFrame(0);
+	boo.waitForSelector('div', function success() {
+		//lets take the html of the current page
+		var html = this.takeHTML();
+		html = $("<div>"+html+"</div>").find("div.alert, img, iframe, a:contains(www), a:contains(http)").remove().end().html();
+		// html = $("<div>"+html+"</div>").find("div.alert").remove().end().html();
+
+		var job = {};
+		
+		/*job-data-start*/
+		 job.html = $("div.content-container", html).html();
+		// job.location = $("", html).find("").text();
+		// job.logo = $("", html).find("").attr("src");
+		// job.source_apply_email = $("", html).find("").text();
+		// job.source_empname = $("", html).find("").text();
+		// job.source_jobtype = $("", html).find("").text();
+		// job.source_salary = $("", html).find("").text();
+
+
+/*
+	if(job.html.indexOf("MISSION")>0)job.html = boo.removeTextBefore(job.html, "MISSION", false);
+    		*/      
+     		    		
+		/**/
+		  if(job.html.indexOf("Responsibilities")>0){
+    		      job.html = boo.removeTextBefore(job.html, "Responsibilities", false);
+     		   } 
+		
+		/*
+      		  if(job.html.indexOf("Contact")>0){
+       			   job.html = boo.removeTextAfter(job.html, "Contact", true);
+       			 }
+		*/
+		/**/
+      		  if(job.html.indexOf("Aprio, LLP is an Equal Opportunity")>0){
+       			   job.html = job.html.split("Aprio, LLP is an Equal Opportunity").shift();
+       			 }
+		if(job.html.indexOf("Aprio is an Equal Opportunity")>0){
+       			   job.html = job.html.split("Aprio is an Equal Opportunity").shift();
+       			 }
+      if(job.html.indexOf("Why work for Aprio")>0){
+       			   job.html = job.html.split("Why work for Aprio").shift();
+       			 }
+      if(job.html.indexOf("Career Path")>0){
+       			   job.html = job.html.split("Career Path").shift();
+       			 }
+      //Career Path
+//Why work for Aprio
+		 /*
+      		if(job.html.indexOf("Mission")>-1){
+        	  	job.html = "<b>Mission</b>" +job.html.split("Mission")[1];
+       		 }
+       		 */
+
+			job.html = boo.cleanHTML(job.html);
+		//      job.html = $("<div>"+job.html+"</div>").find("h2").remove().end().html();
+		/*job-data-end*/
+		
+			if (typeof job.html == 'undefined'){
+    		   		   job.html = "";
+      			  }
+        		 if(job.html.length<200)
+   				job.html="";
+
+		//Send data... 
+		this.updateJob(job);
+	},function error() {
+	}, 5000);
+});
+boo.run();

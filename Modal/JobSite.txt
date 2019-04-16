@@ -1,0 +1,191 @@
+boo.start();
+
+var selectorJobs = "table.table";
+var selectorPaginacion = "";
+
+
+//Funcion para abrir el jobsiteurl
+boo.then(function() {
+	boo.open(boo.out.url);
+	boo.pushThen(['wait-for-page-load']);
+}, "go-to-page");
+
+//funcion para esperar por la informacion de la pagina
+boo.saveThen(function() {
+	boo.waitForSelector(selectorJobs, 
+	function success(){
+      boo.msg('[Y] Cargo el extract');
+      boo.pushThen(['extract']);
+	},
+	function fail(){
+      boo.msg('[W] NO cargo el extract');
+	},15000
+);
+	// boo.pushThen(['extract']);
+},"wait-for-page-load");
+
+//Funcion para extraer los jobs
+boo.saveThen(function() {
+	html = this.takeHTML();
+
+	//Echo # of page and add +1 to current page counter
+	boo.msg("Starting page: "+(++boo.out.numpage));
+		
+	//create page object -- pagejobs => array , have_next_page => false , nextpage => currentpage +1
+	page = {pagejobs:[], have_next_page: false, nextpage: boo.out.numpage + 1};
+
+	/*extract-start*/
+	//var remap = {};
+	$("table tr",html).each(function( index ) {/*loop-start*/
+		var job = {};/*init*/
+		var modal =$(this).find("td:last") ;
+		job.title = $(this).find("td:first").text().split("- ")[0];
+		job.location = "GB";
+        job.url = 'http://inside.alliancemedical.co.uk/apply/Careers.aspx';
+        
+        /*if(modal==1){
+        var id_aux = $(this).find("td:last a:contains(View)").attr('id')+"";
+        //boo.msg('[I] ID: ' + id_aux);
+        if (id_aux.indexOf('undefined') ==-1) {*/
+        boo.then(function(){
+          boo.clickSelector('a:contains(View)');
+          boo.waitUntilVisible('div.modalPopup', 
+              function success(){
+              boo.msg('[Y] Entre');
+              var html2 = boo.takeHTML();
+              job.html = $("div#careerPopUp", html2).html();
+                      /* */
+                          if(job.html.indexOf("Job Description")>0){
+                                  job.html = boo.removeTextBefore(job.html, "Job Description", false);
+                               } 
+                       //Apply Now
+            			/**/
+                            if(job.html.indexOf("Apply Now")>0){
+                                 job.html = job.html.split("Apply Now").shift();
+                               }
+                      
+              page.pagejobs.push(job);
+            
+              boo.clickSelector('a:contains(Close X)');
+              boo.wait(500);
+              boo.waitWhileVisible('table.table', 
+                  function success(){
+                  boo.msg('[I] Desaparecio');
+                  },
+                  function fail(){
+                  boo.msg('[W] Desaparecio');
+                  },3000
+              );
+              },
+              function fail(){
+              },3000
+          );
+		});
+		// job.location = $(this).find("").text();
+		// job.location = boo.cleanLoc(job.location, '', remap); 
+		// job.multilocation = "";
+		// job.url = $(this).find("").attr("href");
+		// job.logo = $(this).find("").attr("src");
+		// job.source_apply_email = $(this).find("").text();
+		// job.source_empname = $(this).find("").text();
+		//if(job.source_empname.toUpperCase().indexOf("CONFIDENTIAL")> -1) 
+        //  job.source_empname = "";
+		// job.source_jobtype = $(this).find("").text();
+		// job.source_salary = $(this).find("").text();
+		job.temp = 78951;
+
+		//job.source_ppc = $(this).find("sponsored").text().trim().replace("sponsored","").trim() * 100;
+		
+		
+     /*   }
+        }*/
+	});/*loop-end*/
+	/*extract-end*/
+    
+    //Echo # of jobs found
+    boo.then(function(){
+    boo.msg("Jobs found: "+page.pagejobs.length);
+	//Send jobs to Ghost Process
+	if(page.pagejobs.length > 0)
+	boo.send_jobs(page.pagejobs);	
+    else
+      boo.msg('[W] Array vacio');	
+      
+   // boo.pushThen(['have-next-page']);
+    });
+  
+	//	boo.pushThen(['have-next-page']);
+}, "extract");
+
+
+boo.saveThen(function() {
+  var have_next_page = false;
+  /* Si existe el elemento*/
+	//if($(selectorPaginacion, html).length > 0){
+    if($("a:contains("+page.nextpage+")", html).length > 0){
+    //if($("a:contains(Next)", html).length > 0){
+    	boo.msg('[Y] Hay proxima pagina');
+    	have_next_page = true;    
+    } 
+  else if($("a:contains(...)", html).length > 0){
+    boo.msg("a[href*='Page$"+page.nextpage+"']");
+    boo.clickSelector("a[href*='Page$"+page.nextpage+"']");
+    boo.waitForSelectorTextChange(selectorPaginacion, 
+        function success(){
+        boo.msg('[Y] Subo 10 mas');
+        boo.pushThen(['extract']);
+        },
+        function fail(){
+        boo.msg('[W] Error subiendo 10 mas');
+      boo.pushThen(['extract']);
+        },15000
+    );
+  }
+    
+if(have_next_page) boo.pushThen(['go-to-next-page']);
+
+ /* Paginación por números     
+    $("ul.pagination.no-margin a", html).each(function()
+    {
+        if($(this).text().trim() == page.nextpage)
+       {
+          boo.msg("[I] Hay otra pagina");
+
+      if(!have_next_page)
+      {
+         boo.pushThen(['go-to-next-page']);
+            have_next_page = true;
+         }
+  };
+ });   
+ */ 
+}, "have-next-page");
+ 
+
+boo.saveThen(function() {
+	/*Haciendo click en un elemento*/
+	//boo.clickSelector(selectorPaginacion);
+	boo.clickSelector("a:contains("+page.nextpage+")");
+	//boo.clickSelector("a:contains(Next)");
+	boo.waitForSelectorTextChange(selectorJobs, 
+	function success(){
+      boo.msg('[Y] Pagine');
+      boo.pushThen(['extract']);
+	},
+	function fail(){
+      boo.msg('[W] NO pagine');
+	},15000
+);
+	
+
+	/* Abriendo un link en la página
+    var nextpage = (boo.out.numpage+1)*10;
+    var nexturl = "http://bhrs.co.za/index.php?option=com_jobboard&view=list&catid=1&layout=list&limitstart="+nextpage;
+	boo.multilink_set({urls:[nexturl]});
+	boo.multilink_open('wait-for-page-load');
+	*/
+}, "go-to-next-page");
+
+boo.run();
+
+ 

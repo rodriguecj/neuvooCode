@@ -1,0 +1,160 @@
+boo.start();
+
+//Funcion para abrir el jobsiteurl
+boo.then(function() {
+	boo.open(boo.out.url);
+	boo.pushThen(['wait-for-page-load']);
+}, "go-to-page");
+
+//funcion para esperar por la informacion de la pagina
+boo.saveThen(function() {
+	//boo.page.switchToChildFrame(0);
+	boo.waitForSelector('div#content-block', 
+	function success(){
+      boo.pushThen(['extract']);
+	},
+	function fail(){
+      boo.msg('[W] Text never changed!');
+	},3000
+);
+	// boo.pushThen(['extract']);
+},"wait-for-page-load");
+
+//Funcion para extraer los jobs
+boo.saveThen(function() {
+	html = this.takeHTML();
+ var actualUrl = this.getCurrentUrl();
+	//Echo # of page and add +1 to current page counter
+	boo.msg("Starting page: "+(++boo.out.numpage));
+		
+	//create page object -- pagejobs => array , have_next_page => false , nextpage => currentpage +1
+	page = {pagejobs:[], have_next_page: false, nextpage: boo.out.numpage + 1};
+
+	/*extract-start*/
+	//var remap = {};
+	$("tr.offre-titre",html).each(function( index ) {/*loop-start*/
+		var job = {};/*init*/
+		
+		job.title = $(this).text().split('(')[0];
+		job.location = $(this).next().find('div.offre-critere:nth-of-type(3)').text().split('(')[0];
+          /* */if(job.location.indexOf("Centre")>-1){
+               job.location = "France";
+             }
+      // job.location = boo.cleanLoc(job.location, '', remap); 
+		// job.multilocation = "";
+		var url_j = $(this).find("a").attr("href");
+		
+        job.url = 'https://www.altays-progiciels.com/clicnjob/'+url_j;
+      // job.logo = $(this).find("").attr("src");
+		// job.source_apply_email = $(this).find("").text();
+		// job.source_empname = $(this).find("").text();
+		 job.source_jobtype = $(this).next().find("div.offre-critere:nth-of-type(1)").text();
+		// job.source_salary = $(this).find("").text();
+		job.temp = "hokksza";
+      
+         // Inland para extraer validacion de fecha en en JobData
+      /*
+      
+      boo.then(function(){
+         // boo.msg('[I] Entre');
+              boo.thenOpen(job.url.trim(), function(){
+                boo.msg('[I] Revisando jobdata');
+                var html2 = this.takeHTML();
+                //Inicio Validacion de Fecha
+
+	var fecha = $("tr.critere-liste", html2).find("div.detail-offre-critere:nth-of-type(11)").text().replace("Date de publication :","").trim();
+        var day = fecha.split(/[-./]| /g)[0].trim();
+        var month = fecha.split(/[-./]| /g)[1];
+        var year = fecha.split(/[-./]| /g)[2];
+       var meses = ["01","02","03","04","05","06","07", 
+				     "08","09","10","11","12"];
+        meses.forEach(function(mes,i) {
+            if((new RegExp(month,'i')).test(mes)){
+                month = i+1;
+            }
+        });
+        var date = month+"/"+day+"/"+year;
+
+        var job_date = new Date(date);
+        var actual_date = new Date();
+        var result_date = actual_date.getTime() - job_date.getTime() ;
+        var miliseconds_in_six_months = (1000 * 60 * 60 * 24* 365)/ 2;
+        result_date = result_date/miliseconds_in_six_months;
+        if (result_date < 1){
+            page.pagejobs.push(job);
+          boo.msg("[I] Job no vencido  "+job_date);
+        }
+        else{
+          boo.msg("[W] Job vencido  "+job_date);
+        }
+
+//Fin Validacion de Fecha
+                
+                
+                 boo.open(actualUrl, function(){
+                             boo.msg('[W] Backing');
+                        });
+                
+                    }, 5000);
+          });*/
+      /**/
+		if(job.title.length > 0){
+          page.pagejobs.push(job);
+        }
+		
+		
+	});/*loop-end*/
+	/*extract-end*/
+    
+    //Echo # of jobs found
+    boo.msg("Jobs found: "+page.pagejobs.length);
+	//Send jobs to Ghost Process
+	boo.send_jobs(page.pagejobs);	
+  
+		boo.pushThen(['have-next-page']);
+}, "extract");
+
+boo.saveThen(function() {
+	var have_next_page = false;
+	
+	/* Si existe el elemento*/
+	if($("a.gdfliengras:last", html).length > 0){
+    	boo.msg('Paginacion');
+    	have_next_page = true;    
+    } 
+    
+  
+	/* Paginacion por numeros
+    $("", html).each(function(){
+        if($(this).text().trim() == page.nextpage){
+            have_next_page = true;
+        }
+    });
+	*/
+
+	if(have_next_page) boo.pushThen(['go-to-next-page']);
+}, "have-next-page"); 
+
+boo.saveThen(function() {
+  var nextUrl = "https://www.altays-progiciels.com/clicnjob/ListeOffreCand.php?PageCour="
+  +page.nextpage+"&Autonome=1&Liste=Oui&RefOffrel=&NoFaml=0&NoParam1l=0&NoParam2l=0&NoParam3l=0&NoParam133l=0&NoParam134l=0&NoParam136l=0&NoEntite1=0&NoEntite=&NoPaysl=0&NoRegionl=0&NoDepartementl=0&NoNivEtl=0&NoTableCCl=0&NoTableCC2l=0&NoTableCC3l=0&NoTableOffreUnl=0&NoTypContratl=0&NoTypContratProl=0&NoStatutOffrel=&NoTableOffreLieePl=0&NoTableOffreLieeFl=0&NoUtilisateurl=&RechPleinTextel=#ancre3";
+ boo.multilink_set({urls:[nextUrl]});
+ boo.multilink_open('wait-for-page-load');
+ boo.msg(nextUrl, "notification-success");
+ boo.msg("[I]"+nextUrl);
+/*var nextpage = boo.out.numpage+1;
+var nexturl = "https://www.klanik.com/consulter-nos-offres/page/"+nextpage;
+this.thenOpen(nexturl, function() {
+boo.waitForSelector('div.liste-offres article', 
+        function success(){
+			boo.msg('[Y]Página cargada.');
+         	 boo.pushThen(['extract']);
+        },
+        function fail(){
+      		boo.msg('[W]Hay un Error al cargar la página.');
+        },3000
+    );
+});*/
+}, "go-to-next-page");
+
+boo.run();

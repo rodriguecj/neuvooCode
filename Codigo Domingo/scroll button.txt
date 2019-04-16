@@ -1,0 +1,154 @@
+boo.start();
+
+//Funcion para abrir el jobsiteurl
+boo.then(function() {
+ boo.open(boo.out.url);
+    var cont = 1;
+    boo.then(function() {
+        this.scrollToBottom();
+        this.wait(3000);
+        this.msg("Scrolling first");
+
+    }).repeat(5, function(){
+        this.scrollToBottom();
+        this.msg("Scrolling ="+cont);
+        cont++;
+        this.wait(3000);
+
+    });
+ boo.pushThen(['wait-for-page-load']);
+}, "go-to-page");
+
+//funcion para esperar por la informacion de la pagina
+boo.saveThen(function() {
+ //boo.page.switchToChildFrame(0);
+  boo.wait(5000);
+ boo.waitForSelector('ul.opening-jobs li.opening-job', 
+ function success(){
+      //boo.pushThen(['extract']);
+      boo.msg('[W] cargar-jobs');
+      boo.pushThen(['cargar-jobs']);
+ },
+ function fail(){
+      boo.msg('[W] Text never changed!');
+ },3000
+);
+ // boo.pushThen(['extract']);
+},"wait-for-page-load");
+
+//funcion para cargar previamente todos los jobs en la pagina
+var cont = 0;
+boo.saveThen(function(){
+   var html = this.getHTML();
+   if($("a.link.details-desc.js-more", html).length > 0){
+    cont++;
+    boo.clickSelector('a.link.details-desc.js-more');
+    
+    boo.waitForSelectorTextChange('ul.opening-jobs li.opening-job', 
+      function success(){
+             boo.msg("[I] -> "+cont);
+              this.pushThen(['cargar-jobs']);
+          },
+          function fail(){
+               boo.msg("[Y]Ya cargue todos los jobs del botón More. "+cont+" veces.");
+           boo.pushThen(['extract']);
+          },10000
+    );
+   
+   }else{
+     boo.msg("[Y]Ya cargue todos los jobs del botón More. "+cont+" veces.");
+    boo.pushThen(['extract']);
+   } 
+}, "cargar-jobs");
+
+
+//Funcion para extraer los jobs
+boo.saveThen(function() {
+ html = this.takeHTML();
+ 
+ //Echo # of page and add +1 to current page counter
+ boo.msg("Starting page: "+(++boo.out.numpage));
+  
+ //create page object -- pagejobs => array , have_next_page => false , nextpage => currentpage +1
+ page = {pagejobs:[], have_next_page: false, nextpage: boo.out.numpage + 1};
+
+ /*extract-start*/
+ //var remap = {};
+ $("ul.opening-jobs li.opening-job ",html).each(function( index ) {/*loop-start*/
+  var job = {};/*init*/
+  
+  job.title = $(this).find("h3.details-title").text();
+      
+      job.title = job.title.replace("MX_FRMX_","");
+job.title = job.title.replace("MX_RBMX_","");
+job.title = job.title.replace("(Planta Toluca)","");
+job.title = job.title.replace("(Shainin, Kepner tregoe)","");
+job.title = job.title.replace("MX_BSMX_","");
+job.title = job.title.replace("_MX","");
+  // job.location = $(this).find("").text();
+  // job.location = boo.cleanLoc(job.location, '', remap); 
+  // job.multilocation = "";
+   job.url = $(this).find("a").attr("href");
+  // job.logo = $(this).find("").attr("src");
+  // job.source_apply_email = $(this).find("").text();
+  // job.source_empname = $(this).find("").text();
+  // job.source_jobtype = $(this).find("").text();
+  // job.source_salary = $(this).find("").text();
+  job.temp = 100;
+  
+  page.pagejobs.push(job);
+  
+ });/*loop-end*/
+ /*extract-end*/
+    
+    //Echo # of jobs found
+    boo.msg("Jobs found: "+page.pagejobs.length);
+ //Send jobs to Ghost Process
+ boo.send_jobs(page.pagejobs); 
+  
+ // boo.pushThen(['have-next-page']);
+}, "extract");
+
+boo.saveThen(function() {
+ var have_next_page = false;
+ 
+ /* Si existe el elemento
+ if($("", html).length > 0){
+     have_next_page = true;     
+    } 
+    */
+  
+ /* Paginacion por numeros
+    $("", html).each(function(){
+        if($(this).text().trim() == page.nextpage){
+            have_next_page = true;
+        }
+    });
+ */
+
+ if(have_next_page) boo.pushThen(['go-to-next-page']);
+}, "have-next-page"); 
+
+boo.saveThen(function() {
+ /*Haciendo click en un elemento
+ 
+ boo.clickSelector('');
+   boo.waitForSelectorTextChange('', 
+ function success(){
+      boo.pushThen(['extract']);
+ },
+ function fail(){
+      boo.msg('[W]text never changed... executing again');
+ },3000
+ );*/
+ 
+
+ //boo.pushThen(['wait-for-page-load']);
+ 
+ /* Abriendo un link en la pagina
+ boo.multilink_set({urls:[""]});
+ boo.multilink_open('wait-for-page-load');
+ */
+}, "go-to-next-page");
+
+boo.run();

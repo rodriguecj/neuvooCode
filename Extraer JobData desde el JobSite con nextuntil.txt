@@ -1,0 +1,36 @@
+/*extract-start*/
+	//var remap = {};
+	$("p:contains((H/F))",html).each(function( index ) {/*loop-start*/
+		var job = {};/*init*/
+		
+		 job.title = $(this).text();
+		 job.location = "Levallois Perret, Paris";
+		// job.location = boo.cleanLoc(job.location, '', remap); 
+		// job.multilocation = "";
+		 job.url = "http://www.evergreenhotel-paris.com/emploi/";
+		// job.logo = $(this).find("").attr("src");
+		 job.source_apply_email = "pardrh@evergreen-hotels.com";
+		// job.source_empname = $(this).find("").text();
+		// job.source_jobtype = $(this).find("").text();
+		// job.source_salary = $(this).find("").text();
+      
+      
+               // job.html = job.html.split(" Contact: ").shift();
+               // job.html = job.html.split("Lieu de travail").shift();
+
+ 		 job.html = '';
+	  	         $(this).nextUntil('p:contains((H/F))').each(function (index, element){
+	      		job.html = job.html + $(element).html();
+	 		   });
+     	 	  job.html = boo.cleanHTML(job.html);
+		//job.jobdesc = $("<div>"+job.html+"</div>").text();
+      
+
+
+
+		job.temp = 1;
+		
+		page.pagejobs.push(job);
+		
+	});/*loop-end*/
+	/*extract-end*/

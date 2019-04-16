@@ -1,0 +1,106 @@
+boo.start();
+var number_job_now = 0;
+var cont = 0;
+
+//---------------------------Función para abrir el jobsiteurl------------------------------------------------------------------
+
+boo.then(function() {
+  boo.open(boo.out.url);
+  boo.pushThen(['wait-for-page-load']);
+}, "go-to-page");
+
+//--------------------------Función para esperar por la informacion de la página---------------------------------------------------------
+
+boo.saveThen(function() {
+  boo.waitForSelector('div.container', function success( ){
+    boo.msg('[I]Pagina cargada');
+       boo.pushThen(['scroll']);
+  },function fail(){
+    boo.msg('[W]La pagina no cargó');
+  },5000);
+},"wait-for-page-load");
+
+//------------------------------------------------------------------------------
+
+boo.saveThen(function() {
+    boo.scrollToBottom();
+    boo.msg('[I] scroll: '+cont);
+    cont++;
+    boo.waitForSelectorTextChange('div.inner30', function success(){
+      boo.pushThen(['scroll']);
+    },function fail(){
+      boo.pushThen(['extract']);
+    },6000);
+},"scroll");
+
+
+//---------------------------------------------------------------------------------------------
+//Funcion para extraer los jobs
+  boo.saveThen(function() {
+  html = this.takeHTML();
+  boo.msg("Starting page: "+(++boo.out.numpage));
+  page = {pagejobs:[], have_next_page: false, nextpage: boo.out.numpage + 1};
+
+//------------------------------------Extract-Start-------------------------------------------------
+  /*extract-start*/
+  $("div.media-body",html).each(function( index ) {/*loop-start*/
+    var job = {};/*init*/
+    
+    job.title = $(this).find("a:eq(0)").text().split("(")[0].replace("...","");
+            /* */ if(job.title.indexOf("Part-Time")>-1){
+                    job.title = job.title.split("Part-Time")[0].trim();
+             }
+    if(job.title.indexOf("/Full Time ")>-1){
+                    job.title = job.title.split("/Full Time ")[0].trim();
+             }
+    
+    job.location = $(this).find("strong:eq(1)").text();
+    
+    
+    var jobId = $(this).find("a").attr("href").split("/job/")[1].split("/?")[0].trim();
+    
+    job.url = "https://www.aftercollege.com/company/pepsico/386754/"+jobId+"/?refererPath=other";
+  
+    job.temp = "98765413972917";
+    
+    if(job.title.length > 0 && job.location.length > 0){
+      page.pagejobs.push(job);
+    }
+    
+  });/*loop-end*/
+  /*extract-end*/
+
+
+//-------------------------------------Extract-End-------------------------------------------------------    
+    //Echo # of jobs found
+    boo.msg("Jobs found: "+page.pagejobs.length);
+    boo.send_jobs(page.pagejobs); 
+    var number_job_update = page.pagejobs.length;
+    var number_job_update_int = parseInt(number_job_update,10);
+    number_job_now = number_job_now +number_job_update_int;
+    boo.msg("[Y]Number jobs now: "+ number_job_now);
+    boo.pushThen(['have-next-page']);
+}, "extract");
+
+/*--------------------------- ----Check-nextpage-start--------------------------------------------------------------------*/
+
+boo.saveThen(function() {
+  if($("X", html).length > 0){
+      boo.msg('[I]CHECK OK');  
+      boo.pushThen(['go-to-next-page']);
+   } 
+}, "have-next-page"); 
+
+/*----------------------------------Goto-nextpage-start-----------------------------------------------------------*/
+
+boo.saveThen(function() {
+  if(boo.clickLabel(page.nextpage, "X")){ 
+    boo.msg('[I]CLICK OK');  
+    boo.pushThen(['wait-for-page-load']);
+    
+    } 
+}, "go-to-next-page");
+
+/*------------------------------------Goto-nextpage-end-------------------------------------------------*/
+
+boo.run();

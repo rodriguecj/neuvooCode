@@ -1,0 +1,372 @@
+boo.start(boo.out.url);
+//Funcion para abrir el jobsiteurl
+boo.then(function() {
+  boo.open(boo.out.url);
+  boo.pushThen(['wait-for-page-load']);
+}, "go-to-page");
+
+//funcion para esperar por la informacion de la pagina
+var json;
+var totalPages;
+boo.saveThen(function() {
+  boo.pushThen(['extract']);
+},"wait-for-page-load");
+
+boo.saveThen(function() {
+  //lets take a picture of the current page and save its html
+
+  var html = this.saveHTML();
+  //Echo # of page and add +1 to current page counter
+  this.msg("Starting page: "+(++this.out.numpage));
+  json = JSON.parse(this.getPageContent());
+
+  //Extrae el numero de paginas existentes, para luego paginar
+  // var maxpagination = parseInt(json.TotalResultCount)-1;
+  // boo.msg('Total maxpagination: '+maxpagination);
+  //totalPages =Math.floor(maxpagination / 10)+1; 
+  //create page object -- pagejobs => array , have_next_page => false , nextpage => currentpage +1
+  var page = {pagejobs:[], have_next_page: false, nextpage: this.out.numpage + 1};
+
+  if(json.d.results){
+    var jobs = json.d.results;
+
+    /*extract-start*/
+    //var remap = {};
+    boo.msg('Total jobs: '+jobs.length);
+    for(i in jobs){
+      var job = {};
+      job.title = jobs[i].Title;
+      job.title = job.title.split(/in der|für die| im |in den| der /).shift().split(":").pop().trim();
+      //job.location = jobs[i].Location.LocationID;
+      //if(job.location === "0") job.location= "France";
+      //job.location = (location) ? location : "France";
+      //job.location = getLOC(job.location);
+      // job.logo = jobs[i].LogoImage;
+      job.url = "https://jobs.allianz.com/sap/bc/bsp/sap/zhcmx_erc_ui_ex/desktop.html?jobId=" + jobs[i].JobID;
+      job.source_empname = jobs[i].Company.Text;
+      //job.source_jobtype = jobs[i].DisplayJobType;
+      job.temp = "123072018";
+      page.pagejobs.push(job);
+    }/*loop-end*/
+    /*extract-end*/
+  }
+  //Echo # of jobs found
+  this.msg("Jobs found: "+page.pagejobs.length);
+  //Send jobs to Ghost Process
+  this.send_jobs(page.pagejobs);
+
+  boo.pushThen(['have-next-page']);
+}, "extract");
+
+
+//SAP Location codes        
+function getLOC(str){
+  var temp = ["37240016",
+"32760041","37560010","37560014","13840001","33800022","60760048",
+"58400005","32500028","32500029","32500011","58400008","58400112",
+"60760049","58400009","58400111","37240003","51240005","37240004",
+"32500030","37240005","24580015","32500032","32500031","32500033",
+"58400167","60760051","60760050","60000000","35280001","33800008",
+"23560028","23560003","21560019","58400102","37920002","14500001",
+"30560002","33800011","60760001","32500034","32500035","32500036",
+"58400010","58400115","58400011","58400113","23560004","32760082",
+"20000000","23560005","33000001","58400004","32500037","75540001",
+"32500038","32760039","37560016","70360000","30400000","32500039",
+"37240006","32760086","37240007","32760100","60760052","58400055",
+"14660001","27640001","11400001","60760002","37240009","33800009",
+"37560008","37560018","37560019","33800026","32500095","24580024",
+"60760003","32760043","32760101","32760040","21560002","21560009",
+"60760004","33720001","30560000","60760005","12040000","32760009",
+"32760103","50600000","37560004","37560017","58400056","58400057",
+"32760037","23560006","32500020","37240048","38330017","60760007",
+"32760036","32760038","32500002","58400058","32500040","32760104",
+"60760054","60760008","37030001","60760000","30400002","32760008",
+"32760096","38330001","70360005","38330002","51240006","70360006",
+"30560001","36420002","36420001","33480001","33480002","58400059",
+"24580013","58400104","30400010","37240010","18540000","24580014",
+"37240011","37240012","33800027","51240019","58400116","32500041",
+"11200000","33800024","60760010","51240000","32500042","38330003",
+"30400011","15040001","60760011","37240013","60760012","60760053",
+"32760044","70000000","11400000","23560029","60760013","32500043",
+"32500044","58400060","38330004","32760045","21560006","32500045",
+"23560035","58400061","21560000","21560039","37560009","58400062",
+"37240014","32500022","58400220","32760004","58400012","58400117",
+"58400013","58400118","32080001","37240015","32500046","32500057",
+"32500056","13840000","32500047","32500048","12040001","32760034",
+"32500049","38260112","37240017","60760046","60760015","32030000",
+"23560030","16860001","58400063","23560031","32760035","58400014",
+"58400120","23560032","32080000","58400064","32760073","58400221",
+"32500023","58400119","37240021","32500050","32760012","11200001",
+"32500051","32760010","32500052","47840001","33720002","32760091",
+"32760011","58400065","38260092","38260094","17100002","14800001",
+"30400007","33800017","32760013","60760055","32760075","32500119",
+"32500013","32500053","32500054","32500055","32460000","60760016",
+"58400121","60760017","32500000","32760003","17100003","32760014",
+"58400066","37560020","33800015","21560023","32760081","21560034",
+"32500058","32500059","17100004","37560001","37560021","32500012",
+"58400122","32760080","32760000","32500060","32760079","37240018",
+"32500061","37560022","38330005","58400067","23560007","60760018",
+"60760056","32760078","32760077","60760019","37240019","36200002",
+"37560023","30400005","33000000","32500021","37240020","21560027",
+"21560029","21560004","38330006","21560030","23560008","23560038",
+"21560028","32760076","32760005","32760094","50600001","21560005",
+"32760026","23560009","32500096","32500120","58400015","58400124",
+"21560014","32760027","21560017","32460001","21560026","32500062",
+"32760089","32760098","23560010","58400068","23440000","23440001",
+"58400069","58400070","21560025","37240022","37240023","21560024",
+"33480000","58400071","58400016","58400126","32500063","58400127",
+"23560000","58400017","58400128","58400168","23600000","32500064",
+"32500065","32760028","37560015","30400003","58400018","58400125",
+"24580008","33720000","58400072","32500066","32760059","37920001",
+"33800000","37240024","23600001","23560011","23920000","46820002",
+"32760017","23560036","21560018","21560022","21560016","21560008",
+"37560012","17100001","24580020","60760020","60760021","60760022",
+"32500067","37560024","24580004","58400019","58400129","32760025",
+"23560012","32760029","32760061","58400020","58400130","24580006",
+"23560013","32760016","51240018","30400006","24580003","24580021",
+"32760058","24580018","24580025","32760049","30400009","24580001",
+"24580033","24580017","24580031","17100005","24580026","23560033",
+"38330007","32500068","32760092","32760060","37240035","37560002",
+"33800021","32760018","37240025","21560015","58400073","33800016",
+"32500027","32500025","30400008","38330009","36200001","58400006",
+"37240026","37240027","32500070","32500071","32500072","32500073",
+"32500069","33800012","17680001","38260001","38260051","60760023",
+"58400074","32760084","58400075","32500074","32500075","58400021",
+"58400131","58400052","30400012","32760095","32500076","37560025",
+"32760032","37560003","37240028","38330010","37560011","32500005",
+"14500000","23560014","37240001","32760031","23560015","38330011",
+"58400022","58400134","32500077","32760030","37240029","24580000",
+"14660000","24580005","60760024","32500078","38260002","23560016",
+"51240007","32760015","60760057","33800020","60760025","60760026",
+"32500079","32500080","32500004","58400133","58400023","58400132",
+"60760060","60760059","14800000","32500081","32760105","23560017",
+"32760074","24580023","70360001","32500082","32500083","64840000",
+"64840001","58400007","58400024","58400135","10000000","33800001",
+"58400076","60760058","58400077","58400025","58400136","24580029",
+"51240004","58400026","58400139","58400027","58400137","23560018",
+"33800005","60760027","33800023","58400028","58400140","32500014",
+"51240003","32500084","15040000","36430001","32500085","58400029",
+"17100006","23560001","32760001","32760062","37240030","23560019",
+"32500015","21560007","32500009","33800007","58400030","58400143",
+"21560012","35280000","32760048","37560026","32760063","32760057",
+"58400031","58400147","51240008","58400032","58400144","58400033",
+"58400145","58400034","58400146","58400078","58400003","58400148",
+"75540000","38330013","51240009","32500026","37560027","32500086",
+"21560035","32500087","58400035","58400141","58400036","58400142",
+"38260089","58400037","32760097","38260090","17100007","38260099",
+"17100009","51240011","35780000","32760072","38330014","51240010",
+"58400079","51240012","32760020","58400106","37560028","32760024",
+"32760054","58400038","58400149","32500088","58400039","58400150",
+"32760051","51240013","58400040","58400151","23560020","32500089",
+"35780001","32760055","18540001","37240032","58400093","37240033",
+"58400001","37240034","58400110","37240008","37240031","32500017",
+"60760061","60760062","60760065","32500001","32500103","32500090",
+"32760064","24580012","58400041","58400152","60760063","70360002",
+"24580002","58400105","58400200","58400094","58400095","60760064",
+"33800010","60760029","32760088","58400096","60760030","36160000",
+"23560034","37240036","58400103","60760031","36200000","32760047",
+"32030001","33800006","51240014","58400153","66300000","33800025",
+"24580034","23560021","32500091","32500093","32500092","32500094",
+"21560036","51240015","32760065","58400097","23560022","60760032",
+"32760052","32500024","32500008","16380000","32760053","32760099",
+"58400042","58400154","32500097","60760033","58400098","60760034",
+"60760066","60760067","60760070","46820001","36420000","33800002",
+"60760068","60760069","32760050","32760046","35280002","32760067",
+"32500016","36430000","32760056","32760102","58400099","16380001",
+"32500019","32500018","58400043","37240037","60760035","30400004",
+"30400014","58400100","58400053","24580027","60760071","37240038",
+"58400080","37240039","60760047","60760036","60760037","60760075",
+"60760038","60760040","60760039","60760073","60760009","32500098",
+"32500099","33800029","24580032","32500100","51240016","46820000",
+"32500101","32500102","32760106","32760107","37560030","32760093",
+"32760090","32760087","32760085","32760022","37560032","38260098",
+"58400081","24580022","37240040","32500105","32500104","32500121",
+"16860000","24100001","24580007","60760072","37240041","32500107",
+"21560033","21560020","21560001","21560010","21560013","21560003",
+"35280003","24580030","21560031","33800028","23560023","27020000",
+"27020001","24580010","37030000","32760066","37560031","32500108",
+"37240042","17100000","58400044","58400155","58400045","58400156",
+"38260095","24100000","38260096","38330015","37240000","58400082",
+"37560005","37560029","58400083","37520001","32500006","32760002",
+"30400015","32760023","24580016","58400101","37520000","37560000",
+"70360003","58400084","21580001","24580011","21580000","23560024",
+"58400085","32500109","32500110","37240043","24580028","24580009",
+"24580019","58400046","58400157","32500118","37240044","58400047",
+"58400158","27640000","37560033","32760108","21560011","37560034",
+"58400086","60760074","17680000","23920001","37240045","70360004",
+"58400087","33800003","51240002","32500003","32500010","33800013",
+"23560025","23560002","37920000","33800018","30400016","60760042",
+"60760043","32760019","33800019","47840000","38260000","58400000",
+"58400088","32760083","30400013","37560035","58400048","58400159",
+"23560026","23560037","37560037","32500122","32500123","37240046",
+"37240047","51240001","32500111","60760044","32500112","37560036",
+"32500113","33800014","58400049","58400162","33800004","30400001",
+"30400018","32500114","32500115","58400050","58400160","60760045",
+"37240002","37560007","58400089","30400017","32500116","32760068",
+"38260097","37560013","58400090","36160001","58400163","58400091",
+"32500007","32760021","32760069","23560027","38260093","58400051",
+"58400107","58400165","17100011","30000000","58400002","58400054",
+"32760006","58400108","58400164","38330016","58400092","32760071",
+"32760007","58400109","58400166","21560037","21560038","24580035",
+"32500117","38260091","51240017","21560032","32500106","37240049",
+"37240050","21560021","37560038","37560006","37560039","32760070"];
+  var aux = ["Aarau","Aargau","Abidjan","Abruzzo","Acre","Addison",
+"Ain","Aisne","Aix en Provence","Alabama","Alabama","Alagoas",
+"Alaska","Alaska","Albacete","Alberta","Alicante","Allier",
+"Almería","Alor Setar","Alpes (Hautes)","Alpes (Hte-Provence)","Alpes-Maritimes","Alpharetta",
+"Amapa","Amazon","Americas","Amsterdam","Ancona","Andaman und Nico.In.",
+"Andra Pradesh","Anhui","Ann Arbor","Antalya","Antananarivo","Antwerp",
+"Aosta Valley","Araçatuba","Ardeche","Ardennes","Ariege","Arizona",
+"Arizona","Arkansas","Arkansas","Arunachal Pradesh","Aschheim","Asia Pacific",
+"Assam","Athens","Atlanta","Aube","Auckland","Aude",
+"Augsburg","Ausser-Rhode","Australia","Austria","Aveyron","Ávila",
+"Bad Soden","Badajoz","Baden-Wurttemberg","Bahia","Baltimore","Bamako",
+"Bangkok","Bangui","Barbacena","Barcelona","Bari","Basel",
+"Basel Land","Basel Stadt","Basilicata","Bas-Rhin","Batu Pahat","Bauru",
+"Bautzen","Bavaria","Bayreuth","Beijing","Beijing","Belém","Belfast",
+"Belgium","Belo Horizonte","Benin","Berlin","Berlin","Bermuda",
+"Bern","Bern","Berwyn","Bethlehem","Bielefeld","Bihar",
+"Bihorel","Bilbao","Birmingham","Blumenau","Bochum","Bonn",
+"Bordeaux","Boston","Bouches-du-Rhone","Brandenburg","Brasilia","Brasília",
+"Bratislava","Brazil","Bregenz","Bremen","Bremen","Brentford",
+"Brisbane","Bristol","British Columbia","Broadbeach","Brussels","Bucharest",
+"Bucuresti","Budapest","Budapest","Buffalo","Bukit Mertajam","Burbank",
+"Burgenland","Burgos","Burkina Faso","Butterworth","Cáceres","Cádiz",
+"Calabria","Calgary","California","Calvados","Cameroon","Campania",
+"Campinas","Canada","Cantal","Cardiff","Carinthia","Casablanca",
+"Cascavel","Castellón de la Plana","Caxias Do Sul","Ceara","Celle","Central & Eastern Europe",
+"Central African Republic","Chandigarh","Chapecó","Charente","Charente-Maritime","Charlotte",
+"Chelmsford","Chemnitz","Chengdu","Cher","Chhaattisgarh","Chicago",
+"China","Chong Qing","Chur","Cincinnati","Ciudad Real","Clermont-Ferrand",
+"Cleveland","Cologne","Colorado","Colorado","Connecticut","Connecticut",
+"Copenhagen","Córdoba","Correze","Corse-du-Nord","Corse-du-Sud","Cote d`Ivoire",
+"Cote-d'Or","Cotes-d'Armor","Cotonou","Cottbus","Creuse","Croydon",
+"Cuenca","Cuiabá","Curitiba","Czech Republic","Dadra und Nagar Hav.","Dakar",
+"Dallas","Daman und Diu","Darmstadt","Delaware","Delaware","Delhi",
+"Denmark","Denver","Dessau","Detroit","Dijon","District of Columbia",
+"Donostia-San Sebastián","Dordogne","Dortmund","Douala","Doubs","Dresden",
+"Drome","Dubai","Dublin","Düren","Düsseldorf","Eagan",
+"East Midlands","East of England","Eastern Cape","Ebene","Eisenstadt","Emilia-Romagna",
+"Erfurt","Espirito Santo","Essen","Essonne","Euralille","Eure",
+"Eure-et-Loir","Finistere","Finland","Florianópolis","Florida","Fortaleza",
+"France","Frankfurt","Freestate","Freiburg","Fresno","Fribourg",
+"Friuli-Venezia Giulia","Fujian","Fulda","Gansu","Gard","Garonne (Haute)",
+"Gauteng","Geneva","Geneva","Gentilly","Georgia","Gera",
+"Germany","Gers","Gießen","Girona","Gironde","Glarus",
+"Glasgow","Glendale","Goa","Goiânia","Goias","Göppingen",
+"Göttingen","Governador Valadares","Granada","Grande Lisboa","Graubuenden","Graz",
+"Greece","Grenoble","Guadalajara","Guangdong","Guangxi","Guangzhou",
+"Guildford","Guizhou","Gujarat","Gurgaon","Hainan","Halle",
+"Hamburg","Hamburg","Hamilton","Hangzhou","Hanover","Haryana",
+"Haut-Rhin","Hauts-de-Seine","Hawaii","Hawaii","Hebei","Heilbronn",
+"Heilongjian","Helsinki","Henan","Herault","Herborn","Hessen",
+"Himachal Pradesh","Hollywood","Hong Kong","Hong Kong","Honolulu","Houston",
+"Hubei","Huelva","Huesca","Hunan","Hungary","Huntington Beach",
+"Idaho","Idaho","Ille-et-Vilaine","Illinois","India","Indiana",
+"Indiana","Indianapolis","Indonesia","Indre","Indre-et-Loire","Ingolstadt",
+"Inner-Rhoden","Innsbruck","Iowa","Iowa","Ipoh","Ireland",
+"Irvine","Isere","Ismaning","Istanbul","Italy","Jaén",
+"Jakarta","Jammu und Kashmir","Japan","Jeddah","Jena","Jharkhand",
+"Jiangsu","Jiangxi","Jilin","Jinan","Jogny","Johannesburg",
+"Johor Bahru","Joinville","Juiz De Fora","Jundiaí","Jura","Jura",
+"Kajang","Kansas","Kansas","Karlsruhe","Karnataka","Kassel",
+"Kempten","Kentucky","Kentucky","Kepong","Kerala","Kiel",
+"Kitchener","Klagenfurt","Klang","Kluang","Koblenz","Kota Bharu",
+"Kota Kinabalu","Krefeld","Krems","Kuala Lumpur","Kuala Terengganu","Kuantan",
+"Kuching","Kwazulu/Natal","Lahad Datu","Lakshadweep","Lancaster","Landes",
+"Landsberg","Landshut","Las Palmas de Gran Canaria","Lausanne","Lazio","Leipzig",
+"León","Liaoning","Liberty Corner","Liguria","Lille","Limoges",
+"Linz","Liphook","Lisbon","Lisle","Lleida","Logroño",
+"Loire","Loire (Haute)","Loire-Atlantique","Loiret","Loir-et-Cher","Lombardy",
+"Lomé","London","London","Londrina","Long Island","Lörrach",
+"Los Angeles","Lot","Lot-et-Garonne","Louisiana","Louisiana","Louisville",
+"Lower Austria","Lower Saxony","Lozere","Lucerne","Ludwigsburg","Lugano",
+"Lugo","Luton","Luzern","Lyon","Madagascar","Madhya Pradesh",
+"Madrid","Magdeburg","Maharashtra","Maidstone","Maine","Maine",
+"Maine-et-Loire","Mainz","Málaga","Malaysia","Mali","Maluri",
+"Manaus","Manche","Manchester","Manipur","Manitoba","Mannheim",
+"Maranhao","Marche","Marília","Maringá","Marne","Marne (Haute)",
+"Marseilles","Maryland","Massachusetts","Massachusetts","Mato Grosso","Mato Grosso do Sul",
+"Mauritius","Mayenne","Mecklenburg-Vorpomm.","Megalaya","Meissen","Melaka",
+"Melbourne","Meurthe-et-Moselle","Meuse","Mexico","Mexico City","Miami",
+"Michigan","Michigan","Middle East & Africa","Milano","Milwaukee","Minas Gerais",
+"Minneapolis","Minnesota","Minnesota","Miri","Mississauga","Mississippi",
+"Mississippi","Missouri","Missouri","Mizoram","Modena","Mogi Das Cruzes",
+"Molise","Montana","Montana","Montpellier","Montreal","Morbihan",
+"Morocco","Moscow","Moselle","Mount Laurel","Mpumalanga","Mumbai",
+"Munich","Münster","Murcia","Nagaland","Nancy","Nanjing",
+"Nantes","Napoli","Nebraska","Nebraska","Nei Mongol","Netherlands",
+"Neubrandenburg","Neuchatel","Neuruppin","Neustadt","Nevada","Nevada",
+"New Brunswick","New Hampshire","New Hampshire","New Jersey","New Jersey","New Mexico",
+"New Mexico","New Orleans","New York","New York","New Zealand","Newcastle",
+"Newfoundland/Labrad.","Nice","Nidwalden","Nievre","Ningxia","Nord",
+"North Carolina","North Carolina","North Dakota","North Dakota","North East","North Palm Beach",
+"North Rhine Westfalia","North West","Northern Cape","Northern Ireland","North-West","Northwest Territory",
+"Norway","Nossen","Nottingham","Nova Scotia","Novato","Nunavut",
+"Nürnberg","O`fallon","Obwalden","Offenbach","Offenburg","Ohio",
+"Ohio","Oise","Oklahoma","Oklahoma","Oldenburg","Ontario",
+"Oregon","Oregon","Orissa","Orne","Oslo","Osnabrück",
+"Ouagadougou","Ourense","Overland Park","Oviedo","Owings Mills","Palencia",
+"Palm Beach Gardens","Palma","Pamplona/Iruña","Pantin","Para","Paraiba",
+"Parana","Paris","Paris","Pas-de-Calais","Passau","Penang",
+"Pennsylvania","Pennsylvania","Pernambuco","Perth","Petaling Jaya","Petaluma",
+"Petersburg","Philadelphia","Phoenix","Piaui","Piemont","Piracicaba",
+"Pirmasens","Pittsburgh","Poços De Caldas","Poland","Pondicherry","Pontevedra",
+"Portland","Porto Alegre","Portugal","Potsdam","Prague","Prato",
+"Prince Edward Island","Puerto Rico","Puerto Rico","Puglia","Pulau Pinang","Punjab",
+"Puy-de-Dome","Pyrenees (Hautes)","Pyrenees-Atlantiques","Pyrenees-Orientales","Qinghai","Quebec",
+"Quedlinburg","Quincy","Rajasthan","Recife","Regensburg","Reims",
+"Rennes","Reunion","Reutlingen","Rhineland Palatinate","Rhode Island","Rhode Island",
+"Rhone","Ribeirão Preto","Richmond","Rio De Janeiro","Rio de Janeiro","Rio Grande do Norte",
+"Rio Grande do Sul","Riyadh","Romania","Rome","Rondonia","Roraima",
+"Rosenheim","Rostock","Rotterdam","Rottweil","Rueil-Malmaison","Russia",
+"Saarbrücken","Saarland","Sacramento","Saint Denis","Saint Denise","Saint Gregoire",
+"Saint Louis","Salamanca","Salvador","Salzburg","Salzburg","San Diego",
+"San Francisco","Sandakan","Santa Catarina","Santa Cruz de Tenerife","Santa Monica","Santander",
+"Santo Andre","Santo Ângelo","Santos","São Bernardo do Campo","São Carlos","São Jose Do Rio Preto",
+"São Jose Dos Campos","Sao Paulo","São Paulo","Saone (Haute)","Saone-et-Loire","Sardinia",
+"Sarikei","Sarthe","Saskatchewan","Saudi Arabia","Savoie","Savoie (Haute)",
+"Saxony","Saxony-Anhalt","Schaffhausen","Schleswig-Holstein","Schönebeck","Schwedt",
+"Schweinfurt","Schwerin","Schwyz","Scotland","Seattle","Segamat",
+"Segovia","Seine-et-Marne","Seine-Maritime","Seine-Saint-Denis","Senegal","Seoul",
+"Seremban","Sergipe","Sevilla","Sevres (Deux)","Shaanxi","Shandong",
+"Shanghai","Shanghai","Shanxi","Shenzhen","s-Hertogenbosch","Sibu",
+"Sichuan","Sicily","Sikkim","Singapore","Singapore","Sitiawan",
+"Slovakia","Soest","Solothurn","Somme","Soria","South Africa",
+"South Carolina","South Carolina","South Dakota","South Dakota","South East","South Korea",
+"South West","Southampton","Spain","Spokane","St. Gallen","St. Gallen",
+"St. Louis","Stockholm","Strasbourg","Stuttgart","Styria","Suhl",
+"Sungai Petani","Sunrise","Sweden","Switzerland","Sydney","Syracuse",
+"Taipei","Taiping","Taiwan","Tamil Nadu","Tampa","Tarn",
+"Tarn-et-Garonne","Tarragona","Tawau","Teluk Intan","Temerloh","Tennessee",
+"Tennessee","Territ.-de-Belfort","Teruel","Texas","Texas","Thailand",
+"Thurgau","Thuringia","Tianjin","Ticino","Tinton Falls","Tocantins",
+"Togo","Tokyo","Toledo","Toowong","Topeka","Torino",
+"Toronto","Toulouse","Tours","Trentino-Alto Adige","Tripura","Trivandrum",
+"Turkey","Tuscany","Tyrol","Uberaba","Uberlândia","Ulm",
+"Umbria","United Arab Emirates","United Kingdom","United States of America","Universal City","Unterföhring",
+"Upper Austria","Uri","Utah","Utah","Uttar Pradesh","Uttaranchal",
+"Valais","Val-de-Marne","Val-d'Oise","Valencia","Valladolid","Vancouver",
+"Var","Varginha","Vaucluse","Vaud","Vendee","Veneto",
+"Vermont","Vermont","Vicenza","Vienna","Vienna","Vienne",
+"Vienne (Haute)","Virginia","Virginia","Vitoria","Vitoria-Gasteiz","Volketswil",
+"Voorhees","Vorarlberg","Vosges","Waiblingen","Wales","Wallisellen",
+"Walnut Creek","Warszawa","Washington","Washington DC","Wasquehal","Weiden",
+"Weilheim","West Bengal","West Midlands","West Palm Beach","West Virginia","West Virginia",
+"Western Cape","Western Europe","Westlake Village","White Plains","Wiesbaden","Wisconsin",
+"Wisconsin","Woking","Woodstock","Wuppertal","Würzburg","Wyoming",
+"Wyoming","Xinjiang","Xizang","Yong Peng","Yonne","Yorkshire & Humbers",
+"Yukon Territory","Yunnan","Yvelines","Zamora","Zaragoza","Zhejiang",
+"Zug","Zurich","Zurich","Zwickau"];
+  for(var j=0 ; j<temp.length; j++){
+    if(str.indexOf(temp[j])!== -1){
+      str = aux[j];
+    }
+  }
+  return str;
+}
+
+
+
+boo.run();
+

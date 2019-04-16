@@ -1,0 +1,138 @@
+boo.start();
+
+//Funcion para abrir el jobsiteurl
+boo.then(function() {
+	boo.open(boo.out.url);
+	boo.pushThen(['wait-for-page-load']);
+}, "go-to-page");
+
+//funcion para esperar por la informacion de la pagina
+boo.saveThen(function() {
+	boo.waitForSelector('div.c1', 
+	function success(){
+     boo.msg('[Y] Cargo el extract');
+     boo.pushThen(['extract']);
+	},
+	function fail(){
+      boo.msg('[W] NO cargo el extract');
+	},15000
+);
+	
+},"wait-for-page-load");
+
+//Funcion para extraer los jobs
+boo.saveThen(function() {
+	html = this.takeHTML();
+
+	//Echo # of page and add +1 to current page counter
+	boo.msg("Starting page: "+(++boo.out.numpage));
+		
+	//create page object -- pagejobs => array , have_next_page => false , nextpage => currentpage +1
+	page = {pagejobs:[], have_next_page: false, nextpage: boo.out.numpage + 1};
+  
+var actualUrl = boo.getCurrentUrl();
+	/*extract-start*/
+	//var remap = {};
+	$("div.c1 ul li:even",html).each(function( index ) {/*loop-start*/
+		var job = {};/*init*/
+		
+		job.title = $(this).find("a").text();
+		//job.source_empname = $(this).find("").text();
+		//job.location = "Sarreguemines, France";
+		//job.location = boo.cleanLoc(job.location,country,remap);
+		job.url = "http://www.camo-interim.fr/"+$(this).find("a").attr("href");
+	
+		
+		// job.logo = $(this).find("").attr("src");
+		// job.source_apply_email = $(this).find("").text();
+		// job.source_empname = $(this).find("").text();
+		// job.source_jobtype = $(this).find("").text();
+		// job.source_salary = $(this).find("").text();
+		job.temp = 17;
+      
+
+        boo.then(function(){
+            boo.msg('[Y] Entre');
+            boo.thenOpen(job.url.trim(), function(){
+                boo.msg('[I] Revisando jobdata');
+                var html2 = this.takeHTML();
+
+                if($("div.c-content tr:contains(Date de publication)", html2).length > 0){
+                  
+              var fecha = $("div.c-content tr:contains(Date de publication)", html2).text();
+              var fechaparte = fecha.replace("Date de publication","").trim();
+      //boo.msg('fechaparte : '+fechaparte);
+        	// fechaparte = fechaparte.replace('gennaio','01').replace('febbraio','02').replace('marzo','03').replace('aprile','04').replace('maggio','05').replace('giugno','06');
+         	// fechaparte = fechaparte.replace('luglio','07').replace('agosto','08').replace('settembre','09').replace('ottobre','10').replace('novembre','11').replace('dicembre','12');
+
+	     var separador = '/';
+         var ano = fechaparte.split(separador)[2];
+         var mes = fechaparte.split(separador)[1]-1;
+         var dia = fechaparte.split(separador)[0];
+         var fecha_job = new Date(ano,mes,dia);
+         var fecha_hoy = new Date(); 
+             boo.msg(fechaparte);               
+             boo.msg(', fecha job :'+fecha_job);     
+         var dif2 = fecha_hoy.getTime() - fecha_job.getTime();
+         var dif = (dif2 / (1000 * 60 * 60 * 24));
+            boo.msg('[Y]'+dif);
+         if(dif<= 180){  // para cuando la fecha es desde el día
+ 	 	//if(dif>= 0){   // para cuando la fecha es hasta el día
+              boo.msg('LO MANDE');    
+             page.pagejobs.push(job);
+         }
+                  /*hasta aqui*/
+               
+                    boo.open(actualUrl, function(){
+                        boo.msg('[W] Backing');
+         	   });
+      	   }
+   		  }, 5000);
+      }); 
+	});
+
+/*loop-end*/
+	/*extract-end*/    
+        boo.then(function() {
+          //Echo # of jobs found
+          boo.msg("Jobs found: "+page.pagejobs.length);
+          //Send jobs to Ghost Process
+          boo.send_jobs(page.pagejobs);
+          //boo.pushThen(['have-next-page']);
+        });  
+	//	boo.pushThen(['have-next-page']);
+}, "extract");
+
+boo.saveThen(function() {
+	var have_next_page = false;
+	
+	/* Si existe el elemento
+	if($("", html).length > 0){
+    	have_next_page = true;    
+    } 
+    */
+  
+	/* Paginación por números
+    $("", html).each(function(){
+        if($(this).text().trim() == page.nextpage){
+            have_next_page = true;
+        }
+    });
+	*/
+
+	if(have_next_page) boo.pushThen(['go-to-next-page']);
+}, "have-next-page"); 
+
+boo.saveThen(function() {
+	/*Haciendo click en un elemento
+	boo.clickSelector('');
+	boo.pushThen(['wait-for-page-load']);
+	*/
+
+	/* Abriendo un link en la página
+	boo.multilink_set({urls:[""]});
+	boo.multilink_open('wait-for-page-load');
+	*/
+}, "go-to-next-page");
+
+boo.run();

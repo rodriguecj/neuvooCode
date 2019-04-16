@@ -1,0 +1,16 @@
+  /**************/
+        if (job.location.indexOf(" | ") > 0){
+          var locs = job.location.split(" | ");
+          for(l in locs){
+          	var jobx = {}; 
+            jobx.title =job.title;
+            jobx.location = locs[l].split("-").reverse().join(", ");
+            jobx.url = job.url;
+            jobx.temp = job.temp;
+            page.pagejobs.push(jobx);
+          }
+        }else{
+          job.location = job.location.split("-").reverse().join(", ");
+          page.pagejobs.push(job);
+          
+        }

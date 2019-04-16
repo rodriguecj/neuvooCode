@@ -1,0 +1,103 @@
+	boo.start(boo.out.url);
+/*_________________________________________________________________________________________________*/	
+  //&interactive=no&quiet-mode=yes
+	/*boo.then(function(){
+	  boo.waitForSelector('iframe', 
+		function success(){
+	      if(boo.page.switchToChildFrame(0)){
+	        boo.msg('[I]iFrame Loaded!');
+	      }      
+		},
+		function fail(){
+	      boo.msg('[W]Error loading iFrame!');
+		},5000);
+	});*/
+/*_____________________________________________________________________________________________________*/	 
+
+	boo.then(function(){
+		boo.waitForSelector('pre', function success() {
+				//lets take the html of the current page
+			var html = this.takeHTML();
+/*_____________________________________________________________________________________________________*/
+			var json = JSON.parse(this.getPageContent());
+			var job = {};
+			
+			/*job-data-start*/
+
+			/*html = $("<div>"+html+"</div>").find("img").remove().end().html();
+			html = $("<div>"+html+"</div>").find("div.alert").remove().end().html();*/
+
+/*_____________________________________________________________________________________________________*/
+
+			job.html = json.jobDesc;//.replace(/<\/div>/g,"<br />");
+			/*if (typeof job.html == 'undefined') 
+			job.html = "";*/
+			// job.location = $("", html).find("").text();
+			// job.logo = $("", html).find("").attr("src");
+			// job.source_apply_email = $("", html).find("").text();
+			// job.source_empname = $("", html).find("").text();
+			// job.source_jobtype = $("", html).find("").text();
+			// job.source_salary = $("", html).find("").text();
+/*_____________________________________________________________________________________________________*/
+			
+			//	job.html = boo.removeTextBefore(job.html, "", false);
+
+
+        /*if(job.html.indexOf("Mision") >-1)
+	job.html = boo.removeTextBefore(job.html, "Mision", false);
+	else
+	job.html = boo.removeTextBefore(job.html, "Atributo", false);*/
+
+  
+         		/*if(job.html.indexOf("Title:") >-1){
+			  job.html = boo.removeTextAfter(job.html, "Title:", true); 
+			  }/*
+
+			//	job.html = boo.removeTextAfter(job.html, "", true);
+/*_____________________________________________________________________________________________________*/
+
+				job.html = boo.cleanHTML(job.html);
+/*_____________________________________________________________________________________________________*/
+      
+          
+		//job.html = job.html.replace("CityMeo est une sociÃ©tÃ© toulousaine dÃ©veloppant la solution de communication sur Ã©crans la plus simple au monde.","<strong></strong><br>");
+	      	
+          
+         		// job.html = job.html.replace("Ã©","e");
+  
+          
+          job.html = job.html.split("Ã©").join("e");
+           job.html = job.html.split("Ãª").join("e");
+          job.html = job.html.split("Ã¨").join("e");
+           job.html = job.html.split("Ã").join("a");
+          job.html = job.html.split("Â").join("");
+           job.html = job.html.split("«").join("");
+           job.html = job.html.split("»").join("");
+           job.html = job.html.split("?").join("");
+          
+         
+         //   	job.html = job.html.replace("Ãª","e"); 
+	    //    job.html = job.html.replace("Â«","<br><strong></strong><br>");
+//job.html = job.html.replace("Â»","<br><strong></strong><br>");
+	    //   job.html = job.html.replace("start-up","<br><strong></strong><br>");
+	    //    job.html = job.html.replace("?","<br><strong></strong><br>");
+	    // job.html = job.html.replace("Â","<br><strong></strong><br>");
+        //   job.html = job.html.replace("Â  ","<br><strong></strong><br>");
+          
+           
+
+/*_____________________________________________________________________________________________________*/
+
+			if(job.html.length<200)
+			job.html="";
+			/*job-data-end*/
+			
+			//Send data...
+		this.updateJob(job);
+	},function error() {
+	}, 5000);
+});
+boo.run();
+
+
+	      

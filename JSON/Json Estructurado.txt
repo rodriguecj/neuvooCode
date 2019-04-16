@@ -1,0 +1,90 @@
+boo.start();
+var url = boo.out.url;
+var aux;
+var hits = 0;
+var number_job_now = 0;
+var cont = 1;
+
+boo.then(function() {
+	boo.open(boo.out.url);
+	boo.pushThen(['wait-for-page-load']);
+}, "go-to-page");
+
+boo.saveThen(function() {	
+      boo.msg('[Y] Cargo el extract');
+      boo.pushThen(['extract']);	
+},"wait-for-page-load");
+
+
+boo.saveThen(function() {
+  
+  aux = boo.evaluate(function(url_) {
+    var xhrrequest = new XMLHttpRequest();
+    xhrrequest.open("GET", url_, false);
+    xhrrequest.setRequestHeader("Accept","application/json,application/xml");
+    xhrrequest.setRequestHeader("Accept-Language","en-CA,en;q=0.8,en-GB;q=0.6,en-US;q=0.4,es;q=0.2");
+    xhrrequest.setRequestHeader("Cache-Control","no-cache");
+    xhrrequest.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+    xhrrequest.setRequestHeader("Pragma","no-cache");
+    var response = "";
+    xhrrequest.onreadystatechange = function() {
+      if(xhrrequest.readyState == 4 && xhrrequest.status == 200)
+      {
+        //console.log(xhrrequest.responseText);
+        response = xhrrequest.responseText;
+      }
+    };
+    xhrrequest.send();
+    return response;
+  }, url);
+  
+  var job = {};
+  var json = JSON.parse(aux);
+  boo.msg('LanguageCode = ' + json.LanguageCode);
+  jobs = json.jobs;
+  page = {pagejobs:[], have_next_page: false, nextpage: boo.out.numpage + 1};
+  for(i in jobs)
+  {
+    var job = {};
+
+    job.title = jobs[i].title;
+    job.location = jobs[i].location.replace("EMEX,","").split(",").reverse().join(", ");
+    job.url = "https://amazon.jobs"+jobs[i].job_path;
+    /************************************************/
+    job.html = jobs[i].description+"<br>"+jobs[i].basic_qualifications+"<br>"+jobs[i].preferred_qualifications;
+    job.html = job.html.replace("undefined","");
+    job.html = boo.cleanHTML(job.html);
+    job.jobdesc = $("<div>"+job.html+"</div>").text();
+    hits = json.hits;
+    //boo.msg("[I] HITS: " + hits);
+    /************************************************/
+    job.temp = 52949;
+    page.pagejobs.push(job);
+  }
+  
+  boo.msg("Jobs found: " + page.pagejobs.length);
+  boo.send_jobs(page.pagejobs); 
+  var number_job_update = page.pagejobs.length;
+  var number_job_update_int = parseInt(number_job_update,10);
+  number_job_now = number_job_now + number_job_update_int;
+  boo.msg("[Y]Number jobs now: "+ number_job_now);  
+  if(number_job_now < hits)
+    boo.pushThen(['go-to-next-page']);
+  
+}, "extract");
+ 
+
+boo.saveThen(function() {
+    var nexturl = "https://www.amazon.jobs/es/search.json?base_query=&city=&country=&county=&facets%5B%5D=location&facets%5B%5D=business_category&facets%5B%5D=category&facets%5B%5D=schedule_type_id&facets%5B%5D=employee_class&facets%5B%5D=normalized_location&facets%5B%5D=job_function_id&latitude=&loc_group_id=&loc_query=&location%5B%5D=tel-aviv-israel&longitude=&offset="
+    +cont
+    +"0&query_options=&radius=24km&region=&result_limit=10&sort=relevant";
+    cont++;
+    url = nexturl;
+	boo.multilink_set({urls:[nexturl]});
+	boo.multilink_open('extract');
+	
+}, "go-to-next-page");
+
+boo.run();
+
+ 

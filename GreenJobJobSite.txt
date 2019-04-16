@@ -1,0 +1,150 @@
+boo.start();
+//Funcion para abrir el jobsiteurl
+boo.then(function() {
+   // boo.msg("url000..."+boo.getCurrentUrl());
+    //boo.msg("Jobsite: "+boo.out.url);
+	boo.open(boo.out.url);
+	boo.pushThen(['wait-for-page-load']);
+}, "go-to-page");
+
+//funcion para esperar por la informacion de la pagina
+boo.saveThen(function() {
+   boo.msg("url..."+boo.getCurrentUrl());
+  boo.noti("url..."+boo.getCurrentUrl());
+   boo.waitForSelector('div.encadre', function() {
+     boo.msg('[I] Extract');
+     boo.pushThen(['extract']);
+    }, function(){ // step to execute if check has failed
+      boo.msg("[W]text never changed...");  
+    },10000);
+
+    },"wait-for-page-load");
+
+
+//Funcion para extraer los jobs
+boo.saveThen(function() {
+	html = this.takeHTML();
+
+	//Echo # of page and add +1 to current page counter
+	boo.msg("[Y]Starting page: "+(++boo.out.numpage));
+		
+	//create page object -- pagejobs => array , have_next_page => false , nextpage => currentpage +1
+	page = {pagejobs:[], have_next_page: false, nextpage: boo.out.numpage + 1};
+
+	/*extract-start*/
+	//var remap = {};
+	$("div.onglet_offre",html).each(function( index ) {/*loop-start*/
+		var job = {};/*init*/
+		
+		 job.title = $(this).find("h3").text();
+		 job.location = $(this).find("p").text().split("Localisation : ")[1].split("Expérience")[0];
+             /**/
+             if(job.location.indexOf(", Paris 17")>-1){
+                 job.location = job.location.replace(", Paris 17","").trim();
+               }
+               
+		// job.location = boo.cleanLoc(job.location, '', remap); 
+		// job.multilocation = "";
+		 job.url = "http://www.greenjob.fr/"+$(this).find("a").attr("href");
+		// job.logo = $(this).find("").attr("src");
+		// job.source_apply_email = $(this).find("").text();
+		// job.source_empname = $(this).find("").text();
+		 job.source_jobtype = $(this).find("p").text().split("Contrat :")[1].split("Publiée")[0].trim();
+		 //job.source_jobtype = $(this).find("p").text().split("Publiée le :")[1];
+      // job.source_salary = $(this).find("").text();
+		job.temp = 1;
+	
+      
+      
+//Inicio Validacion de Fecha
+/**/
+	var fecha = $(this).find("p").text().split("Publiée le :")[1].trim();
+
+        var day = fecha.split(/[-./]| /g)[0].trim();
+        var month = fecha.split(/[-./]| /g)[1];
+        var year = fecha.split(/[-./]| /g)[2];
+
+var meses = ["01","02","03","04","05","06","07",
+				     "08","09","10","11","12"];
+        meses.forEach(function(mes,i) {
+            if((new RegExp(month,'i')).test(mes)){
+                month = i+1;
+            }
+        });
+        var date = month+"/"+day+"/"+year;
+
+        var job_date = new Date(date);
+        var actual_date = new Date();
+        var result_date = actual_date.getTime() - job_date.getTime() ;
+        var miliseconds_in_six_months = (1000 * 60 * 60 * 24* 365)/ 2;
+        result_date = result_date/miliseconds_in_six_months;
+        if (result_date < 1){
+            page.pagejobs.push(job);
+         // boo.msg("[I] Job no vencido  "+job_date);
+        }
+        else{
+          boo.msg("[W] Job vencido  "+job_date);
+        }
+
+//Fin Validacion de Fecha
+
+		//page.pagejobs.push(job);
+		
+	});/*loop-end*/
+	/*extract-end*/
+    
+    //Echo # of jobs found
+    boo.msg("Jobs found: "+page.pagejobs.length);
+	//Send jobs to Ghost Process
+	boo.send_jobs(page.pagejobs);	
+  
+		boo.pushThen(['have-next-page']);
+}, "extract");
+
+
+boo.saveThen(function() {
+	var have_next_page = false;
+	
+	/* Si existe el elemento*/
+	if($("div.numpages a:contains("+page.nextpage+")", html).length > 0){
+      	boo.msg('paginando');
+    	have_next_page = true;    
+    } 
+    
+  
+	/* Paginación por números
+    $("div.numpages a:contains("+page.nextpage+")", html).each(function(){
+        if($(this).text().trim() == page.nextpage){
+          	boo.msg('paginando');
+            have_next_page = true;
+        }
+    });*/
+	
+
+	if(have_next_page) boo.pushThen(['go-to-next-page']);
+}, "have-next-page"); 
+
+boo.saveThen(function() {
+	/*Haciendo click en un elemento*/
+	//boo.page.switchToChildFrame(0);
+	boo.clickSelector('div.numpages a:contains('+page.nextpage+')');
+  	boo.waitForSelectorTextChange('div.encadre', 
+	function success(){
+      boo.msg('[Y]Next Page');
+      boo.pushThen(['extract']);
+	},
+	function fail(){
+      boo.msg('[W]text never changed... executing again');
+	},250000
+	);
+	
+
+	//boo.pushThen(['wait-for-page-load']);
+	
+	/* Abriendo un link en la pagina
+	boo.multilink_set({urls:[""]});
+	boo.multilink_open('wait-for-page-load');
+	*/
+}, "go-to-next-page");
+
+boo.run();

@@ -1,0 +1,53 @@
+boo.start(boo.out.url);
+
+boo.then(function() {
+     boo.waitUntilVisible('div.large-12', function success() {
+          //lets take the html of the current page
+          var html = this.getHTML();
+          // html = $("<div>"+html+"<div>").find("img").remove().end().html();
+          // html = $("<div>"+html+"</div>").find("div.alert").remove().end().html();
+
+          var job = {};
+
+          /*job-data-start*/
+          html = $("<div>"+html+"</div>").find("div.alert, img, iframe, a:contains(www), a:contains(http)").remove().end().html();
+          html = $("<div>"+html+"</div>").find("h2").remove().end().html();
+		  job.html = $("div.large-12", html).html();
+          // job.html = $("<div>"+job.html+"</div>").find("").remove().end().html();
+          if (typeof job.html === "undefined") {
+               job.html = '';
+          }
+          
+          // job.logo = $("", html).find("").attr("src");
+          // job.source_apply_email = $("", html).find("").text();
+          var email = $("<div>"+job.html+"</div>").text().match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+[^\.\s])/gi);
+          if (email) {
+               job.source_apply_email = email[0];
+          }
+          // job.source_empname = $("", html).find("").text();
+          // job.source_jobtype = $("", html).find("").text();
+          // job.source_salary = $("", html).find("").text();
+/*
+          if (job.html.indexOf()>-1) {
+               job.html = boo.removeTextBefore(job.html, "", false);
+          }
+*/
+          if (job.html.indexOf('Wir freuen uns auf Ihre')>-1) {
+               job.html = boo.removeTextAfter(job.html, "Wir freuen uns auf Ihre", true);
+          }
+           var textAfter = ['Media Consulta International Holding AG','We look forward to your application','media consulta International Holding AG'];
+           textAfter.forEach(function (argument) {
+             if (job.html.indexOf(argument)>-1){
+               job.html = boo.removeTextAfter(job.html,argument,true);
+             }
+           });
+          job.html = boo.cleanHTML(job.html);
+
+          /*job-data-end*/
+
+          //Send data...
+          this.updateJob(job);
+     }, function error() {
+	}, 25000);
+});
+boo.run();

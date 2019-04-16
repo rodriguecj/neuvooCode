@@ -1,0 +1,109 @@
+boo.start();
+
+//Funcion para abrir el jobsiteurl
+boo.then(function() {
+	boo.open(boo.out.url);
+	boo.pushThen(['wait-for-page-load']);
+}, "go-to-page");
+
+//funcion para esperar por la informacion de la pagina
+boo.saveThen(function() {
+		boo.waitForSelector('ul.jobs', function() {
+			boo.msg("Starting extract"); 
+			boo.pushThen(['extract']);
+		}, function(){ // step to execute if check has failed
+			boo.msg("text never changed...");  
+		},10000);
+},"wait-for-page-load");
+
+//Funcion para extraer los jobs
+boo.saveThen(function() {
+	html = this.takeHTML();
+
+	//Echo # of page and add +1 to current page counter
+	boo.msg("Starting page: "+(++boo.out.numpage));
+		
+	//create page object -- pagejobs => array , have_next_page => false , nextpage => currentpage +1
+	page = {pagejobs:[], have_next_page: false, nextpage: boo.out.numpage + 1};
+	var actualUrl = this.getCurrentUrl();
+	/*extract-start*/
+	//var remap = {};
+	$("ul.jobs li",html).each(function( index ) {/*loop-start*/
+		var job = {};/*init*/
+		
+		job.title = $(this).find("a").text();
+		job.location = "Toronto,Ontario,Canada";
+		// job.location = boo.cleanLoc(job.location, '', remap); 
+		// job.multilocation = "";
+		job.url = $(this).find("a").attr("href");
+      	job.temp = 300820161;
+     	boo.then(function(){
+          boo.msg('[Y] Entre');
+              boo.thenOpen(job.url.trim(), function(){
+                boo.msg('[I] Revisando jobdata');
+                var html2 = this.takeHTML();
+                if($("h4:contains(Posting Expired)", html2).length == 0)
+                  {
+                    var title = $("#content_area > article > hgroup > h1 > small:nth-child(3)", html2).text();
+                    if(title.length > 5)
+                      job.title = title;
+                    else
+                      job.title = job.title.split(" – ")[0].replace(job.title.split(" ")[0],"");
+                    page.pagejobs.push(job);
+                    boo.open(actualUrl, function(){
+                    boo.msg('[W] Backing');
+                  	});
+                  }
+              }, 5000);
+          });
+		// job.logo = $(this).find("").attr("src");
+		// job.source_apply_email = $(this).find("").text();
+		// job.source_empname = $(this).find("").text();
+		// job.source_jobtype = $(this).find("").text();
+		// job.source_salary = $(this).find("").text();
+	});/*loop-end*/
+	/*extract-end*/
+    boo.then(function(){
+    //Echo # of jobs found
+    boo.msg("Jobs found: "+page.pagejobs.length);
+	//Send jobs to Ghost Process
+  	
+		boo.send_jobs(page.pagejobs);
+      });
+  
+	//	boo.pushThen(['have-next-page']);
+}, "extract");
+
+boo.saveThen(function() {
+	var have_next_page = false;
+	
+	/* Si existe el elemento
+	if($("", html).length > 0){
+    	have_next_page = true;    
+    } 
+    */
+  
+	/* Paginación por números
+    $("", html).each(function(){
+        if($(this).text().trim() == page.nextpage){
+            have_next_page = true;
+        }
+    });
+	*/
+
+	if(have_next_page) boo.pushThen(['go-to-next-page']);
+}, "have-next-page"); 
+
+boo.saveThen(function() {
+	/*Haciendo click en un elemento
+	boo.clickSelector('');
+	boo.pushThen(['wait-for-page-load']);
+	*/
+
+	/* Abriendo un link en la página
+	boo.multilink_set({urls:[""]});
+	boo.multilink_open('wait-for-page-load');
+	*/
+}, "go-to-next-page");
+
+boo.run();

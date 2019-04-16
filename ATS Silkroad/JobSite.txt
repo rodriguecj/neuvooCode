@@ -1,0 +1,66 @@
+var domain="https://morphotrust-openhire.silkroad.com";
+
+boo.out.show_remote_msg=0;
+boo.start(boo.out.url);
+
+/*---------------------------------------------------------------------------------------------*/
+
+	boo.then(function() {
+	  
+		//lets take a picture of the current page and save its html
+		//this.pic();
+	  
+		var html = this.saveHTML();
+		//Echo # of page and add +1 to current page counter
+		this.msg("Starting page: "+(++this.out.numpage));
+			
+		//create page object -- pagejobs => array , have_next_page => false , nextpage => currentpage +1
+		var page = {pagejobs:[], have_next_page: false, nextpage: this.out.numpage + 1};
+
+/*---------------------------------------------------------------------------------------------*/
+  
+		/*extract-start*/
+		$("div.cssAllJobListPosition",html).each(function( index ) {/*loop-start*/
+			
+		  	var job = {};/*init*/
+			
+              job.title = $(this).find("a.cssAllJobListPositionHref").text().replace(/\(.*?\)/g, '');
+              //job.source_empname = $(this).find("").text();
+              job.location = $(this).text().trim();
+          	  job.location = job.location.substring(job.location.lastIndexOf(")")+1).trim(); 
+              //job.location = boo.cleanLoc(job.location,country,remap);
+              job.url = "https://morphotrust-openhire.silkroad.com"+$(this).find("a.cssAllJobListPositionHref").attr("href");
+              job.temp = "re12fr";
+
+                //boo.msg("[I]Title: "+job.title);
+                //boo.msg("[I]Location: "+job.location);
+                //boo.msg("[I]Url: "+job.url);
+
+                    if(job.title.length > 1){
+                      page.pagejobs.push(job);
+                    } 
+			
+		});/*loop-end*/
+		/*extract-end*/
+		
+ /*---------------------------------------------------------------------------------------------*/
+ 
+		//Echo # of jobs found
+		this.msg("Jobs found: "+page.pagejobs.length);
+		//Send jobs to Ghost Process
+		this.send_jobs(page.pagejobs);
+   
+/*---------------------------------------------------------------------------------------------*/
+  
+		/*check-nextpage-start*//*check-nextpage-end*/
+	   
+/*---------------------------------------------------------------------------------------------*/
+  
+		/*goto-nextpage-start*//*goto-nextpage-end*/
+    
+/*---------------------------------------------------------------------------------------------*/
+  
+	}, "extract");
+	boo.run();
+
+/*nextpage-func-start*//*nextpage-func-start*/

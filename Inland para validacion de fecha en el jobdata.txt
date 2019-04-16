@@ -1,0 +1,65 @@
+
+
+Se debe declarar la variable var actualUrl = this.getCurrentUrl();
+
+  boo.saveThen(function() {
+    html = this.takeHTML();
+    boo.msg("Starting page: "+(++boo.out.numpage));
+    page = {pagejobs:[], have_next_page: false, nextpage: boo.out.numpage + 1};
+    var actualUrl = this.getCurrentUrl();
+  /*extract-start*/
+
+
+
+
+/*
+      
+      boo.then(function(){
+         // boo.msg('[Y] Entre');
+              boo.thenOpen(job.url.trim(), function(){
+                boo.msg('[I] Revisando jobdata');
+                var html2 = this.takeHTML();
+                
+                
+                //Inicio Validacion de Fecha
+
+	var fecha = $("div#main-content").find("h4:contains(Date de parution)").next().text().trim();
+
+        var day = fecha.split(/[-./]| /g)[0].trim();
+        var month = fecha.split(/[-./]| /g)[1];
+        var year = fecha.split(/[-./]| /g)[2];
+
+       var meses = ["01","02","03","04","05","06","07", 
+				     "08","09","10","11","12"];
+        meses.forEach(function(mes,i) {
+            if((new RegExp(month,'i')).test(mes)){
+                month = i+1;
+            }
+        });
+        var date = month+"/"+day+"/"+year;
+
+        var job_date = new Date(date);
+        var actual_date = new Date();
+        var result_date = actual_date.getTime() - job_date.getTime() ;
+        var miliseconds_in_six_months = (1000 * 60 * 60 * 24* 365)/ 2;
+        result_date = result_date/miliseconds_in_six_months;
+        if (result_date < 1){
+            page.pagejobs.push(job);
+          //boo.msg("[I] Job no vencido  "+job_date);
+        }
+        else{
+          boo.msg("[W] Job vencido  "+job_date);
+        }
+
+//Fin Validacion de Fecha
+                
+                
+                 boo.open(actualUrl, function(){
+                             boo.msg('[W] Backing');
+                        });
+                
+                    }, 5000);
+          });
+      
+     
+		*/

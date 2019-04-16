@@ -1,0 +1,106 @@
+boo.start(boo.out.url);
+ 
+var links = ["https://careers.smartrecruiters.com/groups/IndigoBooksMusic?page=1",
+             "https://careers.smartrecruiters.com/groups/IndigoBooksMusic?page=2",
+             "https://careers.smartrecruiters.com/groups/IndigoBooksMusic?page=3",
+             "https://careers.smartrecruiters.com/groups/IndigoBooksMusic?page=4",
+             "https://careers.smartrecruiters.com/groups/IndigoBooksMusic?page=5",
+             "https://careers.smartrecruiters.com/groups/IndigoBooksMusic?page=6",
+             "https://careers.smartrecruiters.com/groups/IndigoBooksMusic?page=7",
+             "https://careers.smartrecruiters.com/groups/IndigoBooksMusic?page=8",
+             "https://careers.smartrecruiters.com/groups/IndigoBooksMusic?page=9",
+             "https://careers.smartrecruiters.com/groups/IndigoBooksMusic?page=10",
+             "https://careers.smartrecruiters.com/groups/IndigoBooksMusic?page=11",
+             "https://careers.smartrecruiters.com/groups/IndigoBooksMusic?page=12",
+             "https://careers.smartrecruiters.com/groups/IndigoBooksMusic?page=13",
+             "https://careers.smartrecruiters.com/groups/IndigoBooksMusic?page=14",
+             "https://careers.smartrecruiters.com/groups/IndigoBooksMusic?page=15",
+             "https://careers.smartrecruiters.com/groups/IndigoBooksMusic?page=16",
+             "https://careers.smartrecruiters.com/more/IndigoBooksMusic?type=location&value=Edmonton&page=1",
+             "https://careers.smartrecruiters.com/more/IndigoBooksMusic?type=location&value=Toronto&page=1",
+             "https://careers.smartrecruiters.com/more/IndigoBooksMusic?type=location&value=Toronto&page=2",
+             "https://careers.smartrecruiters.com/more/IndigoBooksMusic?type=location&value=Vancouver&page=1"
+            ];
+ 
+boo.saveThen(function(){
+   
+    this.out.numpage = 0;
+    var new_link = links.shift();
+    boo.msg("[W]Cambio de Url a "+new_link);
+    this.thenOpen(new_link, function() {
+      this.pushThen(["extract"]);
+    });
+ 
+},"multilinks");
+ 
+boo.then(function() {
+  //lets take a picture of the current page and save its html
+  this.pic();
+  var html = this.saveHTML();
+  //Echo # of page and add +1 to current page counter
+  this.msg("Starting page: "+(++this.out.numpage));
+ 
+  //create page object -- pagejobs => array , have_next_page => false , nextpage => currentpage +1
+  var page = {pagejobs:[], have_next_page: false, nextpage: this.out.numpage + 1};
+ 
+  //Colocamos el Extract aqui
+  /*extract-start*/
+	//var remap = {};
+  $("li.job",html).each(function( index ) {/*loop-start*/
+    var job = {};/*init*/
+
+    job.title = $(this).find("a h3").text().replace("*MUST HAVE 5AM AVAILABILITY*","");
+    if(job.title.indexOf("Show")>-1){
+      job.title = "";
+    }
+    job.location = $(this).parent().prev().find("h2.opening-title").text();    
+    if(job.location.indexOf("Show")>-1){
+      job.location = "";
+    }
+    // job.location = boo.cleanLoc(job.location, '', remap); 
+    // job.multilocation = "";
+    job.url = ""+$(this).find("a").attr("href");
+    if(job.url.indexOf("Edmonton")>-1){
+      job.location = "Edmonton, CA";
+    }
+    if(job.url.indexOf("Vancouver")>-1){
+      job.location = "Vancouver, CA";
+    }
+    if(job.url.indexOf("Toronto")>-1){
+      job.location = "Toronto, CA";
+    }
+    // job.logo = $(this).find("").attr("src");
+    // job.source_apply_email = $(this).find("").text();
+    // job.source_empname = $(this).find("").text();
+    // job.source_jobtype = $(this).find("").text();
+    // job.source_salary = $(this).find("").text();
+    job.temp = 2682018;
+    
+    if(job.title.length > 5 && job.location.length > 0){
+      page.pagejobs.push(job);
+    }
+		
+	});/*loop-end*/
+	/*extract-end*/
+ 
+  //boo.msg("[W]Current_page: "+current_page);
+  //Echo # of jobs found
+  this.msg("Jobs found: "+page.pagejobs.length);
+  //Send jobs to Ghost Process
+  if(page.pagejobs.length > 0){
+    this.send_jobs(page.pagejobs);
+  }
+ 
+  //Colocamos el check next page
+  /*check-nextpage-start*//*check-nextpage-end*/
+ 
+  /*goto-nextpage-start*//*goto-nextpage-end*/
+  //Aqui es donde se realiza el cambio de url de los links
+    if(!page.have_next_page && links.length > 0){
+        this.pushThen(["multilinks"]);
+    }
+ 
+ 
+}, "extract");
+ 
+boo.run();

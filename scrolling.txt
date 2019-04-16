@@ -1,0 +1,157 @@
+﻿boo.start();
+
+//Funcion para abrir el jobsiteurl
+boo.then(function() {
+  boo.open(boo.out.url);
+    var cont = 1;
+    boo.then(function() {
+        this.scrollToBottom();
+        this.wait(3000);
+        this.msg("Scrolling first");
+
+    }).repeat(5, function(){
+        this.scrollToBottom();
+        this.msg("Scrolling ="+cont);
+        cont++;
+        this.wait(3000);
+
+    });
+  boo.pushThen(['wait-for-page-load']);
+}, "go-to-page");
+
+//funcion para esperar por la informacion de la pagina
+boo.saveThen(function() {
+  // boo.waitFor
+  //boo.pushThen(['extract']);
+},"wait-for-page-load");
+
+//Funcion para extraer los jobs
+boo.saveThen(function() {
+  html = this.takeHTML();
+
+  //Echo # of page and add +1 to current page counter
+  boo.msg("Starting page: "+(++boo.out.numpage));
+    
+  //create page object -- pagejobs => array , have_next_page => false , nextpage => currentpage +1
+  page = {pagejobs:[], have_next_page: false, nextpage: boo.out.numpage + 1};
+
+  /*extract-start*/
+  //var remap = {};
+  $("table.listview tbody tr",html).each(function( index ) {/*loop-start*/
+    var job = {};/*init*/
+    
+    job.title = $(this).find("td a").text().split("September").shift().split("Standort").shift().split("Stuttgart").shift().split(" – ").shift().split("südwestlicher").shift();
+     var filterTitle = ['(m/w)','(w/m)','m/w','w/m'];
+        filterTitle.forEach(function (argument) {
+            var n = job.title.lastIndexOf(argument);
+            var result = job.title.substring(n);
+            if(job.title.indexOf(argument)>-1){
+                job.title = job.title.split(result)[0].trim()+' m/w';
+            }
+        });
+        if(job.title.indexOf('m/w')>-1){
+            job.title = job.title.split("m/w")[0].trim()+' (m/w)';
+        }
+        if(job.title.indexOf('(100%)')>-1){
+            job.title = job.title.split("(100%)")[0].trim();
+        }
+        var filterTitle2 = ['(Toscana,',' 2018'];
+        filterTitle2.forEach(function (argument) {
+            var n = job.title.lastIndexOf(argument);
+            var result = job.title.substring(n);
+            if(job.title.indexOf(argument)>-1){
+                job.title = job.title.split(result)[0].trim();
+            }
+        });
+        job.location = $(this).find("p:nth-of-type(2)").text().split("/").pop();
+        if(job.location.toLowerCase().search(/[()]/g)>-1){
+          job.location= job.location.replace(/ *\([^)]*\) */g,""); 
+        } 
+      
+      job.title = job.title.replace('in Schaffhausen','');
+    // job.location = boo.cleanLoc(job.location, '', remap); 
+    // job.multilocation = "";
+    job.url = "http://www.georgfischer.com" + $(this).find("a").attr("href");
+    // job.logo = $(this).find("").attr("src");
+    // job.source_apply_email = $(this).find("").text();
+    // job.source_empname = $(this).find("div.secondary_heading_2:eq(0)").text().trim();
+    // job.source_jobtype = $(this).find("p.date").text();
+    // job.source_salary = $(this).find("").text();
+    job.temp = "test1";
+  
+     var get_date =$(this).find("p.date").text().trim();
+      //boo.msg(" fecha "+get_date);
+      get_date= get_date.replace("Jan ","01-");
+      get_date= get_date.replace("Feb ","02-");
+      get_date= get_date.replace("Mar ","03-");
+      get_date= get_date.replace("Apr ","04-");
+      get_date= get_date.replace("May ","05-");
+      get_date= get_date.replace("Jun ","06-");
+      get_date= get_date.replace("Jul ","07-");
+      get_date= get_date.replace("Aug ","08-");
+      get_date= get_date.replace("Sep ","09-");
+      get_date= get_date.replace("Oct ","10-");
+      get_date= get_date.replace("Nov ","11-");
+      get_date= get_date.replace("Dec ","12-");
+      get_date=get_date.replace(", ","-").trim();
+      //boo.msg(" fecha"+get_date.trim());
+      if(get_date.split('-')[1].length<2)
+        get_date=get_date.split('-')[2] + '-0' + get_date.split('-')[1] + '-' +get_date.split('-')[0];
+       var fecha1 = new Date(get_date.split('-')[2] + '-' + get_date.split('-')[0] + '-' +get_date.split('-')[1]+'T17:00:00');     
+       var fecha2 = new Date();
+      boo.msg(" fecha "+fecha1);
+       var dif=(fecha2-fecha1)/1000/3600/24;
+       if(dif>180){
+           boo.msg("[I]mas de 6... " + dif);
+      }else{
+        if (job.title.indexOf("Addettostampaggioappartenenteallecategorieprotettelegge6899")===-1){
+            page.pagejobs.push(job);
+        }
+      }
+
+    
+    
+  });/*loop-end*/
+  /*extract-end*/
+    
+    //Echo # of jobs found
+    boo.msg("Jobs found: "+page.pagejobs.length);
+  //Send jobs to Ghost Process
+  boo.send_jobs(page.pagejobs); 
+  
+  //  boo.pushThen(['have-next-page']);
+}, "extract");
+
+boo.saveThen(function() {
+  var have_next_page = false;
+  
+  /* Si existe el elemento
+  if($("", html).length > 0){
+    have_next_page = true;    
+    } 
+    */
+  
+  /* Paginación por números
+    $("", html).each(function(){
+        if($(this).text().trim() == page.nextpage){
+            have_next_page = true;
+        }
+    });
+  */
+
+  if(have_next_page) boo.pushThen(['go-to-next-page']);
+}, "have-next-page"); 
+
+boo.saveThen(function() {
+  /*Haciendo click en un elemento
+  boo.clickSelector('');
+  boo.pushThen(['wait-for-page-load']);
+  */
+
+  /* Abriendo un link en la página
+  boo.multilink_set({urls:[""]});
+  boo.multilink_open('wait-for-page-load');
+  */
+}, "go-to-next-page");
+
+boo.run();

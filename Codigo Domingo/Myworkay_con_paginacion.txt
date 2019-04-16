@@ -1,0 +1,73 @@
+boo.start();
+
+//Funcion para abrir el jobsiteurl
+boo.then(function() {
+	boo.open(boo.out.url);
+	boo.pushThen(['wait-for-page-load']);
+}, "go-to-page");
+var numJobs = 0;
+var hitsPerPage = 0;
+//funcion para esperar por la informacion de la pagina
+boo.saveThen(function() {
+  	//hitsPerPage = hitsPerPage + 20;
+    boo.pushThen(['extract']);
+},"wait-for-page-load");
+
+//Funcion para extraer los jobs
+boo.saveThen(function() {
+	html = this.takeHTML();
+
+	//Echo # of page and add +1 to current page counter
+	boo.msg("Starting page: "+(++boo.out.numpage));
+		
+	//create page object -- pagejobs => array , have_next_page => false , nextpage => currentpage +1
+	page = {pagejobs:[], have_next_page: false, nextpage: boo.out.numpage + 1};
+
+	/*extract-start*/
+	var json = JSON.parse(this.getPageContent());
+  	
+  	var jobs = json.body.children[0].children[0].listItems;
+   boo.msg('[Y] jobs'+jobs.length);
+    for(i in jobs) {
+      var job = {};/*init*/
+      
+      job.title = jobs[i].title.instances[0].text.split("(").shift();
+      job.location = jobs[i].subtitles[0].instances[0].text.split("-").reverse().join(", ");
+      job.url = "https://fnbcorp.wd1.myworkdayjobs.com"+jobs[i].title.commandLink;
+     
+      job.temp = 2;
+      page.pagejobs.push(job);
+         
+    }	
+	/*extract-end*/
+    
+    //Echo # of jobs found
+    boo.msg("Jobs found: "+page.pagejobs.length);
+	//Send jobs to Ghost Process
+	boo.send_jobs(page.pagejobs);	
+   if(boo.send_jobs.length > 0){
+      boo.pushThen(['have-next-page']);
+   }
+   
+   
+	
+}, "extract");
+
+boo.saveThen(function() {
+	var have_next_page = true;
+	boo.msg('[Y]-page.pagejobs.length ' + page.pagejobs.length);
+    
+	if(have_next_page) boo.pushThen(['go-to-next-page']);
+}, "have-next-page"); 
+
+boo.saveThen(function() {
+  hitsPerPage = hitsPerPage +100;
+  var nextUrl = "https://fnbcorp.wd1.myworkdayjobs.com/FNBCORP/fs/searchPagination/318c8bb6f553100021d223d9780d30be/"+hitsPerPage;
+ boo.multilink_set({urls:[nextUrl]});
+ boo.multilink_open('extract');
+ boo.msg(nextUrl, "notification-success");
+ boo.msg("[I]"+nextUrl);
+  
+}, "go-to-next-page");
+
+boo.run();

@@ -1,0 +1,56 @@
+boo.out.show_remote_msg=0;
+boo.out.fast_debug = false;
+boo.start(boo.out.url);
+/*---------------------------------------------------------------------------------------------*/
+
+boo.then(function(){
+  boo.waitForSelector('iframe', 
+	function success(){
+    boo.msg('[Y] Cargo');
+	},
+	function fail(){
+    boo.msg('[W] Cargo');
+	},13000
+);
+});
+
+/*---------------------------------------------------------------------------------------------*/
+boo.withFrame('icims_content_iframe', function(){
+
+//boo.then(function() {
+  //lets save the html of the current page
+  var html = this.takeHTML();
+  var job = {};
+  job.title = this.out.title;
+
+  /*job-data-start*/
+  html = $("<div>"+html+"</div>").find("div.alert").remove().end().html();
+  html = $("<div>"+html+"</div>").find("div.iCIMS_JobOptions").remove().end().html();
+  html = $("<div>"+html+"</div>").find("div.iCIMS_PageFooter").remove().end().html();
+  html = $("<div>"+html+"</div>").find("div.iCIMS_Navigation").remove().end().html();
+  html = $("<div>"+html+"</div>").find("div.iCIMS_Logo").remove().end().html();
+  html = $("<div>"+html+"</div>").find("div.iCIMS_profilePicture").remove().end().html();
+
+  job.html = $("div.iCIMS_MainWrapper", html).html();
+  //job.source_empname = $("", html).text();
+  //job.location = $("", html).text();
+  //job.temp = $("", html).text();
+  
+
+
+  job.html = boo.removeTextBefore(job.html, "Overview", false);
+  //job.html = job.html.split("Teledyne is an Equal Opportunity/Affirmative Action")[0];
+
+  job.html = boo.cleanHTML(job.html);
+
+  /*job-data-end*/
+if (typeof job.html == 'undefined'){
+    		   		   job.html = "";
+      			  }
+        		 if(job.html.length<200)
+   				job.html="";
+  //Send data... 
+  this.updateJob(job);
+});
+
+boo.run();

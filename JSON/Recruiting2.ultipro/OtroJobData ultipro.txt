@@ -1,0 +1,55 @@
+boo.start(boo.out.url);
+
+boo.then(function(){
+	boo.waitForSelector('div#PageContent', function success() {
+		//lets take the html of the current page	
+		var html = this.takeHTML();
+		var job = {};
+		
+		/*job-data-start*/
+		html = $("<div>"+html+"<div>").find("img, a, ul.opportunity-sidebar.list-unstyled, div#behavior-item-template, div#Skills, div#Behaviors").remove().end().html();
+		html = $("<div>"+html+"</div>").find("div.alert, div.opportunity, div#skill-item-template, div#motivation-item-template").remove().end().html();
+		
+		
+		job.html = $("div#PageContent", html).html();
+		if (typeof job.html == 'undefined'){
+          job.html = "";
+        }
+		
+		/*if(job.html.indexOf('Description') != -1){
+			job.html = job.html.split('Description')[1];
+          job.html = 'Description <br>'+job.html;
+		}
+		if(job.html.indexOf('Skills') != -1){
+			job.html = boo.removeTextAfter(job.html, "Skills", true);
+		}*/
+
+		if(job.html.indexOf() != -1){
+			job.html = job.html.split().shift();
+		}
+		if(job.html.indexOf() != -1){
+			job.html = job.html.split().shift();
+		}
+		if(job.html.length < 120){
+			job.html = "";
+		}
+		// job.location = $("", html).find("").text();
+		// job.logo = $("", html).find("").attr("src");
+		// job.source_apply_email = $("", html).find("").text();
+		// job.source_empname = $("", html).find("").text();
+		// job.source_jobtype = $("", html).find("").text();
+		// job.source_salary = $("", html).find("").text();
+
+		//	job.html = boo.removeTextBefore(job.html, "", false);
+		//	job.html = boo.removeTextAfter(job.html, "", true);
+		job.html = boo.cleanHTML(job.html);
+      job.html = job.html.replace('Qualifications','');
+		
+		/*job-data-end*/
+		
+		//Send data... 
+		this.updateJob(job);
+	},function error() {
+	}, 15000);
+});
+boo.run();

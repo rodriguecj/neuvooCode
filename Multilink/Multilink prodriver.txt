@@ -1,0 +1,152 @@
+
+boo.start();
+var number_job_now = 0;
+var cont = 0;
+var links = [
+"AL",
+"AK",
+"AZ",
+"AR",
+"CA",
+"CO",
+"CT",
+"FL",
+"GA",
+"ID",
+"IL",
+"IN",
+"IA",
+"KS",
+"KY",
+"LA",
+"MD",
+"MI",
+"MN",
+"MS",
+"MO",
+"MT",
+"NE",
+"NV",
+"NJ",
+"NM",
+"NY",
+"NC",
+"OH",
+"OK",
+"OR",
+"PA",
+"SC",
+"TN",
+"TX",
+"UT",
+"VA",
+"WA",
+"WI",
+"WY"
+  
+];
+boo.then(function(){
+  this.out.numpage = 0;
+  var new_link = "http://www.prodrivers.com/jobs/?City=&State="+links.shift();
+  boo.msg("[Y]Opening new URL => "+new_link);
+  if(typeof new_link == 'undefined'){
+    boo.msg('[W]All jobs extracted | No more links');
+  }else{
+    boo.thenOpen(new_link, function() {
+      boo.pushThen(['wait-for-page-load']);
+    });      
+  }
+},"multilinks");
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+//Funcion para abrir el jobsiteurl
+boo.saveThen(function() {
+  new_link = new_link;
+  boo.open(new_link);
+  boo.pushThen(['wait-for-page-load']);
+}, "go-to-page");
+
+//funcion para esperar por la informacion de la pagina
+boo.saveThen(function() {
+  // this.page.switchToChildFrame(0);
+  boo.waitForSelector('div.accordionList',
+                      function success(){
+    boo.msg('[I]Cargo el selector!');                 
+    boo.pushThen(['extract']);
+  },
+                      function fail(){
+    boo.msg('[W]timeout');
+    boo.msg('[W]NO Cargo el selector!'); 
+  },8000
+                     );
+},"wait-for-page-load");
+
+//Funcion para extraer los jobs
+boo.saveThen(function() {
+  html = this.takeHTML();
+
+  //Echo # of page and add +1 to current page counter
+  boo.msg("Starting page: "+(++boo.out.numpage));
+
+  //create page object -- pagejobs => array , have_next_page => false , nextpage => currentpage +1
+  page = {pagejobs:[], have_next_page: false, nextpage: boo.out.numpage + 1};
+
+  /*extract-start*/
+  //var remap = {};
+  $('div.accordionItem',html).each(function( index ) {/*loop-start*/
+    var job = {};/*init*/
+
+    job.title = $(this).find('div.accordionHead h2').text();
+    job.location = $(this).find("div.accordionHead h3").text().split(" ").join(", ")+", US";
+          /*  if(job.location.indexOf("Mississauga")>-1){
+               job.location = "Canada";
+             }*/
+    /*  if(job.location.indexOf("Richmond Hil")>-1){
+               job.location = "Canada";
+             }
+   */
+    job.url= "http://www.prodrivers.com"+$(this).find("a:contains(More Info)").attr("href");
+    job.temp = "zzzzzzhola195";
+    page.pagejobs.push(job);
+  });/*loop-end*/
+  /*extract-end*/
+
+  //Echo # of jobs found
+  boo.msg("Jobs found: "+page.pagejobs.length);
+  //Send jobs to Ghost Process
+  boo.send_jobs(page.pagejobs);	
+  
+  /* */ if(links.length >= 1){
+    boo.msg('[I] Numero de links: '+links.length);
+  boo.pushThen(['have-next-page']);
+}
+}, "extract");
+
+boo.saveThen(function() {
+  var have_next_page = false;
+  /* Si existe el elemento*/
+  if($('div.wpjb-paginate-links a.next.page-numbers', html).length > 0){
+    have_next_page = true;    
+    boo.msg('[I]Hay otra pagina!');
+  } 
+
+  if(have_next_page) boo.pushThen(['go-to-next-page']);
+ else  {boo.pushThen(["multilinks"]);
+     //   cont++;
+       }
+}, "have-next-page"); 
+
+boo.saveThen(function() {
+  /*Haciendo click en un elemento*/
+  boo.clickSelector('div.wpjb-paginate-links a.next.page-numbers');
+  boo.waitForSelector('.wpjb-job-list.wpjb-grid .wpjb-grid-row.wpjb-click-area', 
+                      function success(){
+    boo.pushThen(['extract']);
+  },
+                      function fail(){
+    boo.msg('[W]timeout 3');
+  },6000
+                     );
+}, "go-to-next-page");
+
+boo.run();

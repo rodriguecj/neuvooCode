@@ -1,0 +1,59 @@
+boo.start(boo.out.url);
+
+boo.then(function(){
+//boo.page.switchToChildFrame(0);
+	boo.waitForSelector('div', function success() {
+		//lets take the html of the current page
+		var html = this.takeHTML();
+		html = $("<div>"+html+"</div>").find("div.alert, img, iframe, a:contains(www), a:contains(http)").remove().end().html();
+		// html = $("<div>"+html+"</div>").find("div.alert").remove().end().html();
+
+		var job = {};
+		
+		/*job-data-start*/
+		 job.html = $("div.content-text", html).html();
+		// job.location = $("", html).find("").text();
+		// job.logo = $("", html).find("").attr("src");
+		// job.source_apply_email = $("", html).find("").text();
+		// job.source_empname = $("", html).find("").text();
+		// job.source_jobtype = $("", html).find("").text();
+		// job.source_salary = $("", html).find("").text();
+
+		/**/
+		  if(job.html.indexOf("Chez DECATHLON")>0){
+    		      job.html = boo.removeTextBefore(job.html, "Chez DECATHLON", false);
+     		   } 
+		
+		/*
+      		  if(job.html.indexOf("Contact")>0){
+       			   job.html = boo.removeTextAfter(job.html, "Contact", true);
+       			 }
+		*/
+		/**/
+      		  if(job.html.indexOf("Compétences")>0){
+       			   job.html = job.html.split("Compétences").shift();
+       			 }
+		
+
+		 /*
+      		if(job.html.indexOf("Mission")>-1){
+        	  	job.html = "<b>Mission</b>" +job.html.split("Mission")[1];
+       		 }
+       		 */
+
+			job.html = boo.cleanHTML(job.html);
+		//      job.html = $("<div>"+job.html+"</div>").find("h2").remove().end().html();
+		/*job-data-end*/
+		
+			if (typeof job.html == 'undefined'){
+    		   		   job.html = "";
+      			  }
+        		 if(job.html.length<200)
+   				job.html="";
+
+		//Send data... 
+		this.updateJob(job);
+	},function error() {
+	}, 25000);
+});
+boo.run();

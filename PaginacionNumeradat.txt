@@ -1,0 +1,51 @@
+---------------------------------------------------------------------------------------------------------------
+Paginacion con Next   ejemplo bombardier 
+---------------------------------------------------------------------------------------------------------------
+
+Se debe habilitar este boo.pushthen(['have-next-page']) en el Extrator de Job
+---------------------------------------------------------------------------------------------------------------
+
+boo.saveThen(function() {
+	var have_next_page = false;
+	
+	/* Si existe el elemento
+	if($("a:contains("+page.nextpage+")", html).length > 0){
+      	boo.msg('paginando');
+    	have_next_page = true;    
+    } */
+    
+  
+	/* Paginación por números*/
+    $("div.rdpWrap.rdpNumPart a:contains("+page.nextpage+")", html).each(function(){
+        if($(this).text().trim() == page.nextpage){
+          	boo.msg('paginando');
+            have_next_page = true;
+        }
+    });
+	
+
+	if(have_next_page) boo.pushThen(['go-to-next-page']);
+}, "have-next-page"); 
+
+boo.saveThen(function() {
+	/*Haciendo click en un elemento*/
+	//boo.page.switchToChildFrame(0);
+	boo.clickSelector('div.rdpWrap.rdpNumPart a:contains('+page.nextpage+')');
+  	boo.waitForSelectorTextChange('li.search-j-info', 
+	function success(){
+      boo.msg('[Y]Next Page');
+      boo.pushThen(['extract']);
+	},
+	function fail(){
+      boo.msg('[W]text never changed... executing again');
+	},250000
+	);
+	
+
+	//boo.pushThen(['wait-for-page-load']);
+	
+	/* Abriendo un link en la pagina
+	boo.multilink_set({urls:[""]});
+	boo.multilink_open('wait-for-page-load');
+	*/
+}, "go-to-next-page");

@@ -1,0 +1,123 @@
+boo.start();
+
+//Funcion para abrir el jobsiteurl
+boo.then(function() {
+	boo.open(boo.out.url);
+	boo.pushThen(['wait-for-page-load']);
+}, "go-to-page");
+var numJobs = 0;
+var hitsPerPage = 1;
+//funcion para esperar por la informacion de la pagina
+boo.saveThen(function() {
+  	//hitsPerPage = hitsPerPage + 20;
+    boo.pushThen(['extract']);
+},"wait-for-page-load");
+
+//Funcion para extraer los jobs
+boo.saveThen(function() {
+	html = this.takeHTML();
+
+	//Echo # of page and add +1 to current page counter
+	boo.msg("Starting page: "+(++boo.out.numpage));
+		
+	//create page object -- pagejobs => array , have_next_page => false , nextpage => currentpage +1
+	page = {pagejobs:[], have_next_page: false, nextpage: boo.out.numpage + 1};
+
+	/*extract-start*/
+	var json = JSON.parse(this.getPageContent());
+  	
+  	var jobs = json.jobRequisitions;
+   boo.msg('[Y] jobs'+jobs.length);
+    for(i in jobs) {
+      var job = {};/*init*/
+      
+      job.title = jobs[i].requisitionTitle;
+     // var location = 
+      //job.location = jobs[i].requisitionLocations[0].address.cityName;
+      if(jobs[i].requisitionLocations[0]){
+        job.location = jobs[i].requisitionLocations[0].address.cityName+", US";
+//job.location = jobs[i].requisitionLocations[0].nameCode.shortName;
+      }else{
+        job.location = "US";
+      }
+     // job.location =  job.location+', '+jobs[i].requisitionLocations[0].address.countrySubdivisionLevel1.codeValue;
+     // job.url = "https://workforcenow.adp.com/mascsr/default/careercenter/public/events/staffing/v1/job-requisitions?cid=15cfce1b-135e-4a40-9a77-439f35f0e876&timeStamp=1533648015591&lang=en_US&ccId=19000101_000001&jobId="+jobs[i].customFieldGroup.stringFields[0].stringValue.trim()+ "&lang=en_US&source=TWS";
+        job.url = "https://workforcenow.adp.com/mascsr/default/mdf/recruitment/recruitment.html?cid=0d778a8f-fda3-45ab-b6ef-9fe63eec30dd&ccId=19000101_000001&jobId="          +jobs[i].customFieldGroup.stringFields[0].stringValue.trim()
+          +"&type=JS&lang=en_US";
+      /* 
+      job.html = jobs[i].requisitionDescription;
+      job.html = $("<div>"+job.html+"</div>").find("div.page-title").remove().end().html();
+      //job.html = boo.removeTextBefore(job.html, "currently seeking", false);
+      job.html = boo.cleanHTML(job.html);
+     */
+ //Inicio Validacion de Fecha
+/**/
+	var fecha =jobs[i].postDate.split("T")[0];
+
+      
+      //boo.msg('[I]Fecha: '+fecha);
+        var day = fecha.split(/[-./]| /g)[2].trim();
+        var month = fecha.split(/[-./]| /g)[1].trim();
+        var year = fecha.split(/[-./]| /g)[0].trim();
+
+        var meses = ["01","02","03","04","05","06","07",
+				     "08","09","10","11","12"];
+        meses.forEach(function(mes,i) {
+            if((new RegExp(month,'i')).test(mes)){
+                month = i+1;
+            }
+        });
+        var date = month+"/"+day+"/"+year;
+
+        var job_date = new Date(date);
+        var actual_date = new Date();
+        var result_date = actual_date.getTime() - job_date.getTime() ;
+        var miliseconds_in_six_months = (1000 * 60 * 60 * 24* 365)/ 2;
+        result_date = result_date/miliseconds_in_six_months;
+        if (result_date < 1){
+            page.pagejobs.push(job);
+        //  boo.msg("[I] Job no vencido  "+job_date);
+        }
+        else{
+          boo.msg("[W] Job vencido  "+job_date);
+        }
+
+//Fin Validacion de Fecha
+      job.temp = 55555;
+      
+     // page.pagejobs.push(job);
+         
+    }	
+	/*extract-end*/
+    
+    //Echo # of jobs found
+    boo.msg("Jobs found: "+page.pagejobs.length);
+	//Send jobs to Ghost Process
+	boo.send_jobs(page.pagejobs);	
+   if(page.pagejobs.length > 0){
+      boo.pushThen(['have-next-page']);
+   }
+   
+   
+	
+}, "extract");
+
+boo.saveThen(function() {
+	var have_next_page = true;
+	boo.msg('[Y]-page.pagejobs.length ' + page.pagejobs.length);
+    
+	if(have_next_page) boo.pushThen(['go-to-next-page']);
+}, "have-next-page"); 
+
+boo.saveThen(function() {
+  hitsPerPage = hitsPerPage +20;
+  var nextUrl = "https://workforcenow.adp.com/mascsr/default/careercenter/public/events/staffing/v1/job-requisitions?cid=0d778a8f-fda3-45ab-b6ef-9fe63eec30dd&timeStamp=1539660170642&lang=en_US&ccId=19000101_000001&locale=en_US&$skip="
+  +hitsPerPage+"&$top=20";
+ boo.multilink_set({urls:[nextUrl]});
+ boo.multilink_open('extract');
+ //boo.msg(nextUrl, "notification-success");
+ //boo.msg("[I]"+nextUrl);
+  
+}, "go-to-next-page");
+
+boo.run();

@@ -1,0 +1,126 @@
+boo.start();
+
+//Funcion para abrir el jobsiteurl
+//https://www.emploi.sncf.com/webservices/offres/
+//http://www.sncf.com/fr/groupe
+boo.then(function() {
+ boo.open(boo.out.url);
+ boo.pushThen(['wait-for-page-load']);
+}, "go-to-page");
+
+var debutPage = 0;
+//funcion para esperar por la informacion de la pagina
+boo.saveThen(function() {
+    var vData ={"Tags":[],"SelectedTags":[],"Page":1} ;
+       
+    boo.openJsonPost('https://www.daf.com/nl/api/feature/vacancies/getvacancies', vData);
+ boo.pushThen(['extract']);
+
+},"wait-for-page-load");
+
+//Funcion para extraer los jobs
+boo.saveThen(function() {
+ html = this.takeHTML();
+
+ //Echo # of page and add +1 to current page counter
+ boo.msg("Starting page: "+(++boo.out.numpage));
+  
+ //create page object -- pagejobs => array , have_next_page => false , nextpage => currentpage +1
+ page = {pagejobs:[], have_next_page: false, nextpage: boo.out.numpage + 1};
+
+ /*extract-start*/
+ var json = JSON.parse(this.getPageContent());
+   var jobs = json.Items;
+  //boo.msg('[I]jobs'+jobs);
+    for(i in jobs) {
+      var job = {};/*init*/
+
+      job.title = jobs[i].Title;
+      //job.title = job.title.replace(', TX','').replace(', VA','').replace(', OK','').replace(', CO','')
+       // .replace(', CO','');
+      
+      
+      job.location = jobs[i].Location;
+        /*  if(job.location.trim()!=""){
+                  job.location=job.location.trim()+", US";
+                  }
+
+                  else{
+                  job.location="US";
+                }*/ 
+               
+      // job.location = boo.cleanLoc(job.location, '', remap); 
+      //job.multilocation = ",";
+      //job.url = jobs[i].url;
+        job.url = boo.out.url;
+        job.html = jobs[i].Description;
+        job.html = boo.cleanHTML(job.html);
+        job.jobdesc = $("<div>"+job.html+"</div>").text(); 
+      //job.jobdesc = jobs[i].description;
+      
+     // if (job.jobdesc.length < 1) {job.title = '';}
+      //job.url = 'https://recruiting.adp.com/srccar/public/rest/1/753441/job/'+jobs[i].url+'?rl=enUS';
+      // job.logo = $(this).find("").attr("src");
+      // job.source_apply_email = $(this).find("").text();
+      // job.source_empname = jobs[i].grp;
+      // job.source_jobtype = $(this).find("").text();
+      // job.source_salary = $(this).find("").text();
+      job.temp = 956852596;
+
+      if(job.jobdesc.length > 1){
+      		page.pagejobs.push(job);
+    	}
+    } 
+ /*extract-end*/
+    
+    //Echo # of jobs found
+    boo.msg("Jobs found: "+page.pagejobs.length);
+ //Send jobs to Ghost Process
+ boo.send_jobs(page.pagejobs);
+   boo.msg('[W] ' +jobs.length);
+   /**/ if(jobs.length > 0)
+  boo.pushThen(['have-next-page']);
+
+}, "extract");
+
+boo.saveThen(function() {
+ var have_next_page = true;
+  
+   /*if(page.pagejobs.length<480){
+     have_next_page = true;  
+    }*/
+   
+ /* Si existe el elemento
+ if($("", html).length > 0){
+     have_next_page = true;    
+    } 
+    */
+  
+ /* PaginaciC³n por nCrmeros
+    $("", html).each(function(){
+        if($(this).text().trim() == page.nextpage){
+            have_next_page = true;
+        }
+    });
+ */
+
+ if(have_next_page) boo.pushThen(['go-to-next-page']);
+}, "have-next-page"); 
+
+boo.saveThen(function() {
+   boo.msg('[W] Entre...');
+  boo.msg('[I] Pagina...'+page.nextpage);
+  debutPage = page.nextpage;
+   boo.pushThen(['wait-for-page-load']);
+ /*Haciendo click en un elemento
+ boo.clickSelector('');
+ boo.pushThen(['wait-for-page-load']);
+ */
+
+ /* Abriendo un link en la pC gina
+ boo.multilink_set({urls:[""]});
+ boo.multilink_open('wait-for-page-load');
+ */
+}, "go-to-next-page");
+
+boo.run();

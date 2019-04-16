@@ -1,0 +1,68 @@
+	boo.pushThen(['search_pdf']);
+}, "extract");
+
+boo.saveThen(function() {
+  
+  if(i > 0){
+  		boo.open(page.pagejobs[i-1].url);	 
+    	boo.waitForSelector("div.news.float-left", 
+         function(){
+           boo.msg("[I]¡Page Desc Loaded!");
+          		html = boo.takeHTML();
+		  		page.pagejobs[i-1].url = "http://www.sapagroup.com"+ $("a:contains(Link to document)",html).attr("href");		
+          		
+          		i--;
+          		boo.pushThen(['search_pdf']);
+         }, function(){
+           boo.msg("[W]TIME OUT");
+      }, 5000 );
+  }else{
+    	boo.send_jobs(page.pagejobs);
+  }
+ 
+}, "search_pdf"); 
+
+
+
+
+boo.then(function(){
+          boo.msg('[Y] Entre');
+              boo.thenOpen(job.url.trim(), function(){
+                boo.msg('[I] En JobData');
+                var html2 = this.takeHTML();
+                if($("div.component_content", html2).length > 0)
+                  {
+                    job.url = "http://www.hermosabch.org/"+$("div.component_content a", html2).attr("href");
+                    
+                    page.pagejobs.push(job);
+                    boo.open(actualUrl, function(){
+                    boo.msg('[W] Backing');
+                  	});
+                  }
+              }, 5000);
+          });
+
+
+
+
+-----------------------------------------------------------------------
+por manuel
+
+	boo.then(function(){
+          boo.msg('[Y] Entre');
+              boo.thenOpen(job.url.trim(), function(){
+                boo.msg('[I] Revisando jobdata');
+                var html2 = this.takeHTML();
+                if($("div.content div#ctl00_content a", html2).length >= 0)
+                  {
+                    var url_pdf = $("div.content div#ctl00_content a", html2).attr("href");
+                    if(url_pdf.length > 5)
+                      job.url = "http://www.hermosabch.org/"+url_pdf.replace("http://38.106.5.57/","");
+                   
+                    page.pagejobs.push(job);
+                    boo.open(actualUrl, function(){
+                    boo.msg('[W] Backing');
+                  	});
+                  }
+              }, 5000);
+          });

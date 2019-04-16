@@ -1,0 +1,106 @@
+﻿boo.start();
+
+//Funcion para abrir el jobsiteurl
+boo.then(function() {
+	boo.open(boo.out.url);
+	boo.pushThen(['scrolling']);
+}, "go-to-page");
+
+
+boo.saveThen(function() {
+	boo.scrollToBottom();
+  	boo.waitForSelectorTextChange('div.hays-jobs ol.result-list', function() {
+      boo.msg("Scroll");
+      this.pushThen(['scrolling']);
+    }, function(){ // step to execute if check has failed
+      this.pushThen(['wait-for-page-load']);
+    },10000);
+	
+}, "scrolling");
+  	
+//funcion para esperar por la informacion de la pagina
+boo.saveThen(function() {
+	
+  	boo.waitForSelector('div.hays-jobs ol.result-list', function() {
+    boo.msg("Starting extract");
+    }, function(){ // step to execute if check has failed
+      boo.msg("text never changed...");  
+    },10000);
+	boo.pushThen(['extract']);
+},"wait-for-page-load");
+
+//Funcion para extraer los jobs
+boo.saveThen(function() {
+	html = this.takeHTML();
+
+	//Echo # of page and add +1 to current page counter
+	boo.msg("Starting page: "+(++boo.out.numpage));
+		
+	//create page object -- pagejobs => array , have_next_page => false , nextpage => currentpage +1
+	page = {pagejobs:[], have_next_page: false, nextpage: boo.out.numpage + 1};
+
+	/*extract-start*/
+	//var remap = {};
+	$("div.hays-jobs ol.result-list li",html).each(function( index ) {/*loop-start*/
+		var job = {};/*init*/
+
+		job.title = $(this).find("div.job-search-title a").text().split(' - ')[0].trim();
+		job.location = $(this).find("div.hays-result-location").text().replace('Flexible location','');
+		job.location = job.location.replace('- OR','');
+      	job.location = job.location.replace('Home Based','');
+      // job.location = boo.cleanLoc(job.location, '', remap); 
+		// job.multilocation = "";
+		job.url = "https://m.hays.co.uk"+$(this).find("a").attr("href");
+		// job.logo = $(this).find("").attr("src");
+		// job.source_apply_email = $(this).find("").text();
+		// job.source_empname = $(this).find("").text();
+		// job.source_jobtype = $(this).find("").text();
+		//job.source_salary = $(this).find("div.field.hays-result-rate-value").text();
+		job.temp = 3;
+		
+		page.pagejobs.push(job);
+		
+	});/*loop-end*/
+	/*extract-end*/
+    
+    //Echo # of jobs found
+    boo.msg("Jobs found: "+page.pagejobs.length);
+	//Send jobs to Ghost Process
+	boo.send_jobs(page.pagejobs);	
+  
+	//	boo.pushThen(['have-next-page']);
+}, "extract");
+
+boo.saveThen(function() {
+	var have_next_page = false;
+	
+	/* Si existe el elemento
+	if($("", html).length > 0){
+    	have_next_page = true;    
+    } 
+    */
+  
+	/* PaginaciÃ³n por nÃºmeros
+    $("", html).each(function(){
+        if($(this).text().trim() == page.nextpage){
+            have_next_page = true;
+        }
+    });
+	*/
+
+	if(have_next_page) boo.pushThen(['go-to-next-page']);
+}, "have-next-page"); 
+
+boo.saveThen(function() {
+	/*Haciendo click en un elemento
+	boo.clickSelector('');
+	boo.pushThen(['wait-for-page-load']);
+	*/
+
+	/* Abriendo un link en la pÃ¡gina
+	boo.multilink_set({urls:[""]});
+	boo.multilink_open('wait-for-page-load');
+	*/
+}, "go-to-next-page");
+
+boo.run();

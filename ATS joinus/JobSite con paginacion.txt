@@ -1,0 +1,82 @@
+boo.start(boo.out.url);
+//Funcion para abrir el jobsiteurl
+var hitsPerPage = 0;
+boo.then(function() {
+  boo.open(boo.out.url);
+  boo.pushThen(['wait-for-page-load']);
+}, "go-to-page");
+
+//funcion para esperar por la informacion de la pagina
+//var json;
+//var totalPages;
+boo.saveThen(function() {
+  boo.pushThen(['extract']);
+},"wait-for-page-load");
+
+boo.saveThen(function() {
+  //lets take a picture of the current page and save its html
+
+  var html = this.getHTML();
+  //Echo # of page and add +1 to current page counter
+  this.msg("Starting page: "+(++this.out.numpage));
+  var json = JSON.parse(this.getPageContent());
+
+  //Extrae el numero de paginas existentes, para luego paginar
+  // var maxpagination = parseInt(json.TotalResultCount)-1;
+  //boo.msg('Total maxpagination: '+maxpagination);
+  // totalPages = Math.floor(maxpagination / 10)+1;		
+  //create page object -- pagejobs => array , have_next_page => false , nextpage => currentpage +1
+  var page = {pagejobs:[], have_next_page: false, nextpage: this.out.numpage + 1};
+
+  //if(json.Results){
+  var jobs = json.jobAds;
+  boo.msg(jobs);
+  /*extract-start*/
+  //var remap = {};
+  boo.msg('Total jobs: '+jobs.length);
+  for(i in jobs){
+    var job = {};
+    job.title = jobs[i].title;//.replace("– Ostrava","").replace("- Ostrava","").replace("– CE region","").replace("- CE region","").replace("(CZ/SK)","").replace("CZ/SK","");
+    job.location = "Fr";//jobs[i].locale;
+    var loc = jobs[i].title.toLowerCase().replace("-","").replace("/","").replace("(","").replace("/","").replace(")","");
+      //.replace(")","").replace("[","").replace("]","");
+		loc = loc.split(" ").join("-");
+      job.url = "https://joinus.decathlon.fr/fr/annonce/"+jobs[i].id+"-"+loc;
+    //job.logo = "http://www.reed.co.uk/resources/cms/images/logos/thumbs/"+jobs[i].LogoImage;
+    //job.url = "http://www.reed.co.uk" + jobs[i].Url;
+    //job.source_empname = jobs[i].ProfileName;
+    //job.source_jobtype = jobs[i].DisplayJobType;
+    job.temp = "zzzbhbh";
+    page.pagejobs.push(job);
+  }/*loop-end*/
+  /*extract-end*/
+  //}
+  //Echo # of jobs found
+  this.msg("Jobs found: "+page.pagejobs.length);
+  //Send jobs to Ghost Process
+  this.send_jobs(page.pagejobs);
+
+  if(page.pagejobs.length>0)boo.pushThen(['have-next-page']);
+}, "extract");
+boo.saveThen(function() {
+	var have_next_page = true;
+	//boo.msg('[Y]-page.pagejobs.length ' + page.pagejobs.length);
+    
+	if(have_next_page) boo.pushThen(['go-to-next-page']);
+}, "have-next-page"); 
+
+boo.saveThen(function() {
+  hitsPerPage = hitsPerPage +40;
+  var nextUrl = "https://joinus.decathlon.fr/fr/careers-sites/job-ads-more/12912/0/"
+  +hitsPerPage+'/0?reset=0&filters=%7B"_last"%3Anull%2C"bbox"%3Anull%2C"loc"%3Anull%2C"service"%3Anull%2C"contract"%3Anull%2C"workingTime"%3Anull%7D';
+ boo.multilink_set({urls:[nextUrl]});
+ boo.multilink_open('extract');
+// boo.msg(nextUrl, "notification-success");
+// boo.msg("[I]"+nextUrl);
+  
+}, "go-to-next-page");
+
+boo.run();
+
+
+/*nextpage-func-start*//*nextpage-func-start*/

@@ -1,0 +1,187 @@
+﻿boo.start();
+
+//Funcion para abrir el jobsiteurl
+boo.then(function() {
+	boo.open(boo.out.url);
+	boo.pushThen(['wait-for-page-load']);
+}, "go-to-page");
+
+//funcion para esperar por la informacion de la pagina
+boo.saveThen(function() {
+	//boo.page.switchToChildFrame(0);
+	boo.waitForSelector('div#TopPaginationBlock', 
+	function success(){
+      boo.pushThen(['extract']);
+	},
+	function fail(){
+      boo.msg('[W] Text never changed!');
+	},3000
+);
+	// boo.pushThen(['extract']);
+},"wait-for-page-load");
+
+//Funcion para extraer los jobs
+boo.saveThen(function() {
+	html = this.takeHTML();
+
+	//Echo # of page and add +1 to current page counter
+	boo.msg("Starting page: "+(++boo.out.numpage));
+		
+	//create page object -- pagejobs => array , have_next_page => false , nextpage => currentpage +1
+	page = {pagejobs:[], have_next_page: false, nextpage: boo.out.numpage + 1};
+
+	/*extract-start*/
+	//var remap = {};
+	$("table#idRésultatsdelarecherche tr:gt(1)",html).each(function( index ) {/*loop-start*/
+		var job = {};/*init*/
+		
+      	var job = {};/*init*/
+        var jobId = $(this).find("a").attr("href");
+        jobId = jobId.substring(jobId.indexOf("&jobId=")+7, jobId.indexOf("&type")).trim(); 
+      
+      
+      
+		job.title = $(this).find("td:nth-of-type(3)").text();
+		job.title = job.title.replace(", service à la clientèle,centre d'appels, Laval","").split("–")[0].split("-")[0].split("(")[0].replace(/[0-9]/g, '');
+		job.location = $(this).find("td:nth-of-type(7)").text();
+		// job.location = boo.cleanLoc(job.location, '', remap); 
+		job.multilocation = ",";
+		job.url = "https://sjobs.brassring.com/TGWebHost/jobdetails.aspx?partnerid=25404&siteid=5603&jobId="+jobId;
+		// job.logo = $(this).find("").attr("src");
+		// job.source_apply_email = $(this).find("").text();
+		// job.source_empname = $(this).find("").text();
+		// job.source_jobtype = $(this).find("").text();
+		// job.source_salary = $(this).find("").text();
+		job.temp = 10;
+		
+		if(job.location.indexOf(",")>-1)
+             {
+               var aux = job.location.split(",");
+               for(i in aux)
+                 {
+                   var jobx = {};
+                   
+                   jobx.title = job.title;
+                   //jobx.source_empname = job.source_empname;
+                   jobx.location = aux[i] + "-Canada";
+                   //jobx.location = jobx.location.split('-').reverse().join().replace(',',', ')
+                   //.split(",").join(", ").trim();
+                   jobx.url = job.url;
+                   //jobx.html = job.html;
+                   //jobx.logo = job.logo;
+                   jobx.temp = job.temp;
+                   
+                   if(jobx.title.length > 0 && jobx.location.length > 0)
+                   page.pagejobs.push(jobx);  
+                 }
+             }
+         else{
+           job.location = job.location + "-Canada";
+           if( job.title.length > 0 && job.location.length > 0)
+         page.pagejobs.push(job);
+         }
+		
+	});/*loop-end*/
+	/*extract-end*/
+    
+    //Echo # of jobs found
+    this.msg("Jobs found: "+page.pagejobs.length);
+	//Send jobs to Ghost Process
+	this.send_jobs(page.pagejobs);	
+  
+	this.pushThen(['have-next-page']);
+  
+}, "extract");
+
+/*---------------------------------------------------------------------------------------------*/
+
+boo.saveThen(function() {
+  
+	var have_next_page = false;
+	/*Si existe el elemento*/	
+	if($("div#TopPaginationBlock a:contains("+page.nextpage+")", html).length > 0){
+      have_next_page = true;    
+      //boo.msg('[I]Next page: '+page.nextpage);
+    } 
+	if(have_next_page) boo.pushThen(['go-to-next-page']);
+	
+}, "have-next-page"); 
+
+/*---------------------------------------------------------------------------------------------*/
+
+boo.saveThen(function() {
+  
+	/*Haciendo click en un elemento*/	
+    if(boo.clickLabel(page.nextpage, "a")){      
+      boo.waitForSelectorTextChange('table#idRésultatsdelarecherche', 
+      function success(){
+        boo.pushThen(['wait-for-page-load']);
+        boo.msg('[I]Calling extract');
+      },
+      function fail(){
+        boo.msg('[W]Pagination problems');
+      },10000);
+    }  
+
+}, "go-to-next-page");
+
+/*---------------------------------------------------------------------------------------------*/
+
+boo.run();
+
+
+
+//---------------------------------------------JOBDATA
+
+
+boo.start(boo.out.url);
+
+boo.then(function(){
+	boo.waitForSelector('table#tblJobDetail', function success() {
+		//lets take the html of the current page
+		var html = this.takeHTML();
+		// html = $("<div>"+html+"<div>").find("img").remove().end().html();
+		// html = $("<div>"+html+"</div>").find("div.alert").remove().end().html();
+
+		var job = {};
+		
+		/*job-data-start*/
+		html = $("<div>"+html+"</div>").find("div.alert, a").remove().end().html();
+		job.html = $("table#tblJobDetail", html).html();
+		// job.location = $("", html).find("").text();
+		// job.logo = $("", html).find("").attr("src");
+		// job.source_apply_email = $("", html).find("").text();
+		// job.source_empname = $("", html).find("").text();
+		// job.source_jobtype = $("", html).find("").text();
+		// job.source_salary = $("", html).find("").text();
+        job.html = job.html.replace("Évoluez avec nous.","");
+      	job.html = job.html.replace("Voici notre histoire :","");
+      	job.html = job.html.replace("Here's our story:","");
+     	job.html = job.html.replace("Les postes seront affichés sur le","");
+      	job.html = job.html.replace("site de recrutement de la TD","");
+      
+          
+      
+      if (typeof(job.html) == "undefined"){
+            job.html = "";
+        }
+
+        if (job.html.indexOf("Description d'emplo")!=-1){
+            job.html = boo.removeTextBefore(job.html, "Description d'emploi", false);
+        }
+
+        if (job.html.indexOf("**Province (principale)")!=-1){
+          job.html = job.html.split("**Province (principale)").shift();
+        }
+		
+		//	job.html = boo.removeTextAfter(job.html, "", true);
+		job.html = boo.cleanHTML(job.html);
+		
+		/*job-data-end*/
+		
+		//Send data... 
+		this.updateJob(job);
+	},function error() {
+	}, 30000);
+});
+boo.run();

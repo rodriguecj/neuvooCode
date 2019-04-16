@@ -1,0 +1,131 @@
+boo.start();
+
+var links = [
+ 
+  "https://workforcenow.adp.com/mascsr/default/careercenter/public/events/staffing/v1/job-requisitions?cid=5359c4a3-422a-41bd-bcb5-c3ba261e6053&timeStamp=1536339649964&lang=en_US&ccId=657040405_13565&locale=en_US&$top=20",
+  "https://workforcenow.adp.com/mascsr/default/careercenter/public/events/staffing/v1/job-requisitions?cid=5359c4a3-422a-41bd-bcb5-c3ba261e6053&timeStamp=1536339613623&lang=en_US&ccId=657040405_13527&locale=en_US&$top=20",
+  "https://workforcenow.adp.com/mascsr/default/careercenter/public/events/staffing/v1/job-requisitions?cid=5359c4a3-422a-41bd-bcb5-c3ba261e6053&timeStamp=1536339680791&lang=en_US&ccId=657960424_1486&locale=en_US&$top=20"
+  
+  
+  ];
+
+/*---------------------------------------------------------------------------------------------*/
+
+//Funcion para abrir el jobsiteurl
+boo.then(function() {
+	boo.open(boo.out.url);
+	boo.pushThen(['multilinks']);
+}, "go-to-page");
+
+/*---------------------------------------------------------------------------------------------*/
+
+boo.saveThen(function(){
+    this.out.numpage = 0;
+    var new_link = links.shift();
+    boo.msg("[Y]Opening new URL => "+new_link);
+  	if(typeof new_link == 'undefined'){
+      boo.msg('[W]All jobs extracted | No more links, total => '+links.length);
+    }else{
+       boo.thenOpen(new_link, function() {
+        boo.pushThen(['wait-for-page-load']);
+      });      
+    }
+},"multilinks");
+
+/*---------------------------------------------------------------------------------------------*/
+
+var numJobs = 0;
+var hitsPerPage = 1;
+//funcion para esperar por la informacion de la pagina
+boo.saveThen(function() {
+  	//hitsPerPage = hitsPerPage + 20;
+    boo.pushThen(['extract']);
+},"wait-for-page-load");
+
+//Funcion para extraer los jobs
+boo.saveThen(function() {
+	html = this.takeHTML();
+
+	//Echo # of page and add +1 to current page counter
+	boo.msg("Starting page: "+(++boo.out.numpage));
+		
+	//create page object -- pagejobs => array , have_next_page => false , nextpage => currentpage +1
+	page = {pagejobs:[], have_next_page: false, nextpage: boo.out.numpage + 1};
+
+	/*extract-start*/
+	var json = JSON.parse(this.getPageContent());
+  	
+  	var jobs = json.jobRequisitions;
+   boo.msg('[Y] jobs'+jobs.length);
+    for(i in jobs) {
+      var job = {};/*init*/
+      
+      job.title = jobs[i].requisitionTitle;
+     // var location = 
+      //job.location = jobs[i].requisitionLocations[0].address.cityName;
+ 
+        job.location = jobs[i].requisitionLocations[0].nameCode.shortName;
+     
+     // job.location =  job.location+', '+jobs[i].requisitionLocations[0].address.countrySubdivisionLevel1.codeValue;
+     // job.url = "https://workforcenow.adp.com/mascsr/default/careercenter/public/events/staffing/v1/job-requisitions?cid=15cfce1b-135e-4a40-9a77-439f35f0e876&timeStamp=1533648015591&lang=en_US&ccId=19000101_000001&jobId="+jobs[i].customFieldGroup.stringFields[0].stringValue.trim()+ "&lang=en_US&source=TWS";
+        job.url = "https://workforcenow.adp.com/mascsr/default/mdf/recruitment/recruitment.html?cid=5359c4a3-422a-41bd-bcb5-c3ba261e6053&jobId="
+          +jobs[i].customFieldGroup.stringFields[0].stringValue.trim()
+          +"&lang=en_US";
+      /* //&lang=en_US
+      job.html = jobs[i].requisitionDescription;
+      job.html = $("<div>"+job.html+"</div>").find("div.page-title").remove().end().html();
+      //job.html = boo.removeTextBefore(job.html, "currently seeking", false);
+      job.html = boo.cleanHTML(job.html);
+     */
+      
+      
+      job.temp = 5555555;
+      page.pagejobs.push(job);
+         
+    }	
+	/*extract-end*/
+    
+    //Echo # of jobs found
+    boo.msg("Jobs found: "+page.pagejobs.length);
+	//Send jobs to Ghost Process
+	boo.send_jobs(page.pagejobs);	
+  /**/ if(page.pagejobs.length > 0){
+     boo.pushThen(['multilinks']);
+   }
+   
+   
+}, "extract");
+
+/*---------------------------------------------------------------------------------------------*/
+
+boo.saveThen(function() {
+  
+	var have_next_page = false;
+	
+	/*Si existe el elemento	
+	if($("div#example_paginate a:contains("+page.nextpage+")", html).length > 0){
+      have_next_page = true;    
+      boo.msg('[Y]Next page: '+page.nextpage);
+    }else{
+      boo.pushThen(["multilinks"]);
+	}*/
+    
+	if(have_next_page) boo.pushThen(['go-to-next-page']);
+  
+}, "have-next-page"); 
+
+/*---------------------------------------------------------------------------------------------*/
+
+boo.saveThen(function() {
+  
+	/*Haciendo click en un elemento	
+    if(boo.clickLabel(page.nextpage, "a")){
+      boo.msg("[I]Click");
+      boo.pushThen(["wait-for-page-load"]);
+    }*/
+
+}, "go-to-next-page");
+
+/*---------------------------------------------------------------------------------------------*/
+
+boo.run();

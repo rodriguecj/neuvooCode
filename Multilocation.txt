@@ -1,0 +1,49 @@
+Buscar el trabajo de rudy para ver su multilocation
+
+------------------------------------------------------------------------------------------------------------
+Multilocation con un ciclo for
+------------------------------------------------------------------------------------------------------------
+
+
+  	  job.location = $(this).find("XXXXXX").text();
+
+           if(job.location.indexOf("/")>-1){
+            var lista = job.location.split("/");
+        } else{
+            var lista = [job.location];
+        }
+        for (i = 0; i < lista.length; i++) {
+          var job = {};
+          job.location = lista[i].trim()+"";
+
+          job.title = $(this).find("XXXX").text();
+          job.url = "XXXXX"+$(this).find("a").attr("href");
+
+        }
+
+if(job.location.indexOf("|")>-1)
+          {
+            if(job.location){
+            var aux = job.location.split("|");
+            for(i in aux)
+              {
+                var jobx = {};
+                jobx.title = job.title;
+                jobx.location = aux[i].split("-").reverse().join(", ");
+                jobx.url = job.url;
+                jobx.source_empname = job.source_empname;
+                jobx.temp = job.temp;
+                
+
+                page.pagejobs.push(jobx);
+              }
+            } 
+          }
+      	else
+          {
+            job.location = job.location.split("-").reverse().join(", ");
+            page.pagejobs.push(job);
+          }
+         }	
+		else
+          boo.msg('[W] Job Expirado');

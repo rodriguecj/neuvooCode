@@ -1,0 +1,44 @@
+/*--------------------------- ----Check-nextpage-start--------------------------------------------------------------------*/
+boo.saveThen(function() {
+	var have_next_page = false;
+	
+	/* Si existe el elemento*/
+	if($("a:contains("+page.nextpage+")", html).length > 0){
+    	boo.msg('[Y]si hay');
+      have_next_page = true;    	
+    } 
+    
+  
+	/* Paginacion por numeros
+    $("", html).each(function(){
+        if($(this).text().trim() == page.nextpage){
+            have_next_page = true;
+        }
+    });
+	*/
+
+	if(have_next_page) boo.pushThen(['go-to-next-page']);
+}, "have-next-page"); 
+
+boo.saveThen(function() {
+  var nextUrl = "http://qa.neuvoo.com/service/get_fgc.php?url=https://www.cathedralappointments.co.uk/sector/office-jobs/p"+page.nextpage+"?";
+ boo.multilink_set({urls:[nextUrl]});
+ boo.multilink_open('wait-for-page-load');
+ boo.msg(nextUrl, "notification-success");
+ boo.msg("[I]"+nextUrl);
+/*var nextpage = boo.out.numpage+1;
+var nexturl = "https://www.klanik.com/consulter-nos-offres/page/"+nextpage;
+this.thenOpen(nexturl, function() {
+boo.waitForSelector('div.liste-offres article', 
+        function success(){
+			boo.msg('[Y]Página cargada.');
+         	 boo.pushThen(['extract']);
+        },
+        function fail(){
+      		boo.msg('[W]Hay un Error al cargar la página.');
+        },3000
+    );
+});*/
+}, "go-to-next-page");
+
+boo.run();

@@ -1,0 +1,150 @@
+﻿boo.start();
+var number_job_now = 0;
+count = 0;
+	//Funcion para abrir el jobsiteurl
+	boo.then(function() {
+		boo.open(boo.out.url);
+		boo.pushThen(['wait-for-page-load']);
+	}, "go-to-page");
+
+	//funcion para esperar por la informacion de la pagina
+	boo.saveThen(function() {
+		//this.page.switchToChildFrame(0);
+		boo.waitForSelector(' table#cws-search-results',
+			function success(){
+				boo.pushThen(['extract']);
+			},
+			function fail(){
+				boo.msg('[W]timeout');
+			},6000
+		);
+	},"wait-for-page-load");
+
+	//Funcion para extraer los jobs
+	boo.saveThen(function() {
+		html = this.takeHTML();
+
+		//Echo # of page and add +1 to current page counter
+		boo.msg("Starting page: "+(++boo.out.numpage));
+			
+		//create page object -- pagejobs => array , have_next_page => false , nextpage => currentpage +1
+		page = {pagejobs:[], have_next_page: false, nextpage: boo.out.numpage + 1};
+
+		/*extract-start*/
+		//var remap = {};
+		$("table#cws-search-results tr:gt(0)",html).each(function( index ) {/*loop-start*/
+			var job = {};/*init*/
+          
+            var jobid = $(this).find("a").attr("href");
+            jobid = jobid.substring(jobid.indexOf("rid=")+4);
+			
+			job.title = $(this).find("a").text().trim().replace("- Mexique","").replace("(Mandat à Queretaro)","").replace(", Cegep Vieux-Montréal","").replace("- Germany","");
+			//job.source_empname = $(this).find("").text();
+			job.location = $(this).find("td:nth-of-type(3)").text().replace("-Centre ville","").trim().split(",").reverse().join(", ")
+            .replace(/ *\([^)]*\) */g, "");
+			//job.location = boo.cleanLoc(job.location,country,remap);
+			job.url = "http://ch.tbe.taleo.net/CH16/ats/careers/requisition.jsp?org=BRP2&cws=37&rid="+jobid;
+			job.temp = 522154667;
+			page.pagejobs.push(job);
+			
+		});/*loop-end*/
+		/*extract-end*/
+
+		//Echo # of jobs found
+    boo.msg("Jobs found: "+page.pagejobs.length);
+  //Send jobs to Ghost Process
+  boo.send_jobs(page.pagejobs); 
+    var number_job_update = page.pagejobs.length;
+    var number_job_update_int = parseInt(number_job_update,10);
+    number_job_now = number_job_now +number_job_update_int;
+    boo.msg("[Y]Number jobs now: "+ number_job_now);
+    boo.pushThen(['have-next-page']);
+  //  boo.pushThen(['have-next-page']);
+}, "extract");
+
+boo.saveThen(function() {
+  var have_next_page = false;
+  
+  /* Si existe el elemento*/
+  if($(' table[role="presentation"] tr:eq(2) a:contains(>>)', html).length > 0){
+      boo.msg('[I]Next page: '+page.nextpage);
+      boo.msg('[I]entro');
+      boo.pushThen(['go-to-next-page']);
+    } 
+}, "have-next-page");
+
+boo.saveThen(function() {
+  boo.clickSelector('a:contains(>>)');
+  boo.waitForSelectorTextChange('table#cws-search-results', 
+	function success(){
+      boo.pushThen(['extract']);
+	},
+	function fail(){
+      boo.msg('[W] error load info');
+	},9000
+);
+/*var nexturl = "https://ldd.tbe.taleo.net/ldd03/ats/careers/searchResults.jsp?org=BRP2&cws=37&act=next&rowFrom="+count;
+count = count + 100;
+this.thenOpen(nexturl, function() {
+boo.waitForSelector('table[role="presentation"] tr:eq(2) table[role="presentation"] tr:eq(1) table#cws-search-results tr:gt(0)', 
+        function success(){
+      boo.msg('[Y]Página cargada.');
+           boo.pushThen(['extract']);
+        },
+        function fail(){
+          boo.msg('[W]Hay un Error al cargar la página.');
+        },3000
+    );
+});*/
+}, "go-to-next-page");
+
+boo.run();
+
+
+//------------------------JODATA
+
+
+boo.start(boo.out.url);
+
+boo.then(function(){
+	boo.waitForSelector('form', function success() {
+		//lets take the html of the current page
+		var html = this.saveHTML();
+
+		var job = {};
+		
+		/*job-data-start*/
+        html = $("<div>"+html+"<div>")
+          .find("img, div.alert, p:contains(www), p:contains(Suivez-nous sur), ul:contains(LinkedIn)").remove().end().html();
+        html = $("<div>"+html+"</div>").find("div.alert, a, em").remove().end().html();
+		job.html = $("table", html).html();
+		// job.location = $("", html).find("").text();
+		// job.logo = $("", html).find("").attr("src");
+		// if ($("",html).text().match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+[^\.\s])/gi))
+		// job.source_apply_email = $("",html).text()
+		// .match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+[^\.\s])/gi);
+		// job.source_empname = $("", html).find("").text();
+		// job.source_jobtype = $("", html).find("").text();
+		// job.source_salary = $("", html).find("").text();
+        if (typeof(job.html) == "undefined"){
+          job.html = "";
+        }
+
+        if (job.html.indexOf("Description")!=-1){
+          job.html = boo.removeTextBefore(job.html, "Description", false);
+        }
+
+        if (job.html.indexOf("Candidats enregistrés")!=-1){
+          job.html = job.html.split("Candidats enregistrés").shift();
+        }
+		job.html = boo.cleanHTML(job.html);
+		
+		/*job-data-end*/
+		
+		//Send data... 
+		this.updateJob(job);
+	},function error() {
+		boo.msg("[W]timeout");
+	}, 25000);
+});
+boo.run();

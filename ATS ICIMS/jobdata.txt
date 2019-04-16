@@ -1,0 +1,100 @@
+	boo.start(boo.out.url);
+/*_________________________________________________________________________________________________*/
+  //&interactive=no&quiet-mode=yes
+	boo.then(function(){
+	  boo.waitForSelector('iframe', 
+		function success(){
+	      if(boo.page.switchToChildFrame("icims_content_iframe")){
+	        boo.msg('[I]iFrame Loaded!');
+	      }      
+		},
+		function fail(){
+	      boo.msg('[W]Error loading iFrame!');
+		},5000);
+	});	
+/*_____________________________________________________________________________________________________	 
+
+boo.then(function(){
+  boo.waitForSelectorTextChange('div.iCIMS_JobContent', 
+	function success(){
+	},
+	function fail(){
+	},3000
+);
+}, '');*/
+
+	boo.then(function(){
+		boo.waitForSelector('div.iCIMS_JobContent', function success() {
+				//lets take the html of the current page
+			var html = this.takeHTML();
+/*_____________________________________________________________________________________________________*/
+
+			var job = {};
+			
+			/*job-data-start*/
+
+			html = $("<div>"+html+"</div>").find("img").remove().end().html();
+			html = $("<div>"+html+"</div>").find("div.alert").remove().end().html();
+			html = $("<div>"+html+"</div>").find("a").remove().end().html();
+         // html = $("<div>"+html+"</div>").find("div.container-fluid.iCIMS_JobsTable").remove().end().html();
+          
+          
+
+/*_____________________________________________________________________________________________________*/
+
+			/*job.html = $('div.iCIMS_Expandable_Text', html).html()+
+              $('div.iCIMS_Expandable_Text:eq(1)', html).html()+
+              $('div.iCIMS_Expandable_Text:eq(2)', html).html();//.replace(/<\/div>/g,"<br />");*/
+          job.html = $('div.iCIMS_JobContent', html).html();
+			if (typeof job.html == 'undefined') 
+			job.html = "";
+			// job.location = $("", html).find("").text();
+			// job.logo = $("", html).find("").attr("src");
+			// job.source_apply_email = $("", html).find("").text();
+			// job.source_empname = $("", html).find("").text();
+			// job.source_jobtype = $("", html).find("").text();
+			// job.source_salary = $("", html).find("").text();
+/*_____________________________________________________________________________________________________*/
+			
+				job.html = boo.removeTextBefore(job.html, "Overview", false);
+
+
+        /*if(job.html.indexOf("Mision") >-1)
+	job.html = boo.removeTextBefore(job.html, "Mision", false);
+	else
+	job.html = boo.removeTextBefore(job.html, "Atributo", false);*/
+
+  
+         		if(job.html.indexOf("Options") >-1){
+			  job.html = boo.removeTextAfter(job.html, "Options", true); 
+			  }
+
+			//	job.html = boo.removeTextAfter(job.html, "", true);
+/*_____________________________________________________________________________________________________*/
+
+				job.html = boo.cleanHTML(job.html);
+/*_____________________________________________________________________________________________________*/
+
+		//job.html = job.html.replace("","<strong></strong><br>");
+	      	//job.html = job.html.replace("","<br><strong></strong><br>");
+	        //job.html = job.html.replace("","<br><strong></strong><br>");
+	        //job.html = job.html.replace("","<br><strong></strong><br>");
+	        //job.html = job.html.replace("","<br><strong></strong><br>");
+	        //job.html = job.html.replace("","<br><strong></strong><br>");
+	        //job.html = job.html.replace("","<br><strong></strong><br>");
+
+/*_____________________________________________________________________________________________________*/
+
+			if(job.html.length<200)
+			job.html="";
+			/*job-data-end*/
+			
+			//Send data...
+		this.updateJob(job);
+	},function error() {
+	}, 90000);
+});
+boo.run();
+
+
+	      

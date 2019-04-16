@@ -1,0 +1,53 @@
+﻿Recomendaciones para la indexacion de empresas en Russia:
+
+	Russia tiene muchos jobboard el portfolio, tienes que cuidarlos, revisarlos de vez en vez y tratar de que estén en orden. En cuanto a los locations, su organización geográfica es diferente, ellos tienen Pueblo, ciudad, alrededores de Ciudad, población y alrededores de población, lo que ellos llaman Krai
+
+        entonces, es posible que tengas algunos problemas en cuanto a eso, ya que el Geo no está preparado, lo que te sugiero es que cuando veas una Región (Krai "talcosa") y el Geo no la tome, busques los alrededores de la ciudad más cercana a esa locación, así resuelves muchos casos.
+
+	Sobre los títulos, ellos suelen ser más o menos limpios, pero a veces colocan locaciones, en ellos, asi que estate pendiente siempre de revisarlos. Los jobdata, ten cuidado con los botones, casi todos los sitios o jobboards, tienen botones de apply o links, es importante que elimines las "a" de los jobdata
+
+	los empname, deben ir siempre en el idioma Ruso (siempre que estén disponibles), si alguno no lo ves claro en el sitio, búscalo por google, probablemente salga, o en casos más extremos, me tocó buscarlo en los documentos legales de la empresa
+
+	hay muchísimos multilinks , te vas a volver experto en eso
+
+
+
+Recomendaciones para la indexacion de empresas en Ucrania:
+
+
+	Se pueden aplicar las recomendaciones de Russia
+
+	En Ucrania tienes que tener pendiente algo MUY importante debes utilizar filtros para restringir las palabras y frases prohibidas xq hay muchísima prostitución
+
+	guarda este para el extrat
+	var wordsToBlock = ['Ищу работу','работу ищу','Работу','Работу ищу','Ищу','ищу работу','ищу','работу','девушек','девушки','девушка','девочки','девочка','дівчата','дівчинки','дівчина','қыздар','интим','жыныс','секс','інтим','эскорт','ескорт','проститутка','повія','3%','кредит'];            
+
+if (new RegExp(wordsToBlock.join('|'),'i').test(job.title)) {
+                boo.msg('[W] This Work was ignore because it contains sensitive material or this is not a job');
+                return true;            
+}
+
+y este otro para el jobdata
+
+var wordsToBlock = ['Ищу работу','Ищу работу','работу ищу','Работу','Работу ищу','Ищу','ищу работу','ищу','работу','девушек','девушки','девушка','девочки','девочка','дівчата','дівчинки','дівчина','қыздар','интим','жыныс','секс','інтим','эскорт','ескорт','проститутка','повія','3%','кредит'];      
+
+if (new RegExp(wordsToBlock.join('|'),'i').test(job.html)) {
+        boo.msg('[W] This jobdata was left in blank because it contains sensitive material');
+        job.html = '';      
+}
+
+
+
+Básicamente, el primero evita que esos Jobs salgan listados si tienen alguna palabra en el titulo y el otro es para que cuando dentro del jobdata, salga alguna palabra o frase elusiva a eso, se ponga en 0 (lo borre pues) eso creará algunos flag=e pero es mejor eso a estar mostrando prostitución en neuvoo
+
+filters were applied
+
+
+Recomendaciones para la indexacion de empresas en Kazajistan:
+
+
+	KZ tienes que tener tb mucho cuidado, la mayoría de sitios que te puedas conseguir pueden ser fraude, es necesario que busques la empresa por google a ver si es real (si literal, me llegaban algunas que eran engaños)
+
+KZ te vas a acostumbrar a hacer Inland o sacar toda la data del extract xq las páginas no son muy buenas
+
+recuerda colocar un dev comment en todos los que coloques esos filtros para que el QA sepa xq hay flag e o faltan jobs
